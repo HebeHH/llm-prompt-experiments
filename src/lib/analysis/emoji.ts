@@ -36,15 +36,11 @@ export const emojiAnalysisConfig: AnalysisConfig = {
             ],
         },
         {
-            name: 'length',
+            name: 'useEmojis',
             categories: [
                 {
-                    name: 'short',
-                    prompt: 'Be brief.',
-                },
-                {
-                    name: 'long',
-                    prompt: 'Be detailed and thorough.',
+                    name: 'Use Emojis',
+                    prompt: 'Go wild with the emojis.',
                 },
                 {
                     name: 'default',
@@ -52,13 +48,23 @@ export const emojiAnalysisConfig: AnalysisConfig = {
                 },
             ],
         },
+        {
+            name: 'mood',
+            categories: [
+                {
+                    name: 'Happy',
+                    prompt: 'Be excited!',
+                },
+                {
+                    name: 'Sad',
+                    prompt: 'Be Sad!',
+                },
+            ],
+        },
     ],
     promptVariables: [
         'How many whales are there in the ocean?',
         'How can I get better at writing?',
-        'What is the weather like in Tokyo?',
-        'What are the benefits of meditation?',
-        'How do you make the perfect cup of coffee?',
     ],
     responseAttributes: [
         {
