@@ -1,9 +1,13 @@
 export type LLMProvider = 'anthropic' | 'google' | 'openai';
 
-export interface LLMModel {
-    name: string;
-    provider: LLMProvider;
-}
+export interface LLMModel  {
+        name: string,
+        provider: LLMProvider,
+        pricing: {
+            perMillionTokensInput: number,
+            perMillionTokensOutput: number,
+        }
+    }
 
 export interface LLMResponse {
     model: LLMModel;
