@@ -15,34 +15,29 @@ interface ResultsVisualizationProps {
     data: AnalysisData;
 }
 
-type ChartType = 'model' | 'style' | 'length';
-type MetricType = 'emojiCount' | 'uniqueEmojiCount' | 'emojiDensity';
-
 export const ResultsVisualization: React.FC<ResultsVisualizationProps> = ({ data }) => {
-    const [chartType, setChartType] = useState<ChartType>('model');
-    const [metric, setMetric] = useState<MetricType>('emojiCount');
+    const [selectedCategory, setSelectedCategory] = useState<string>('model');
+    const [selectedMetric, setSelectedMetric] = useState<string>(data.config.responseAttributes[0].name);
+
+    const availableCategories = useMemo(() => {
+        return ['model', ...data.config.promptCategories.map(cat => cat.name)];
+    }, [data.config.promptCategories]);
 
     const chartData = useMemo(() => {
         const groupedData: Record<string, { total: number; count: number }> = {};
 
         data.results.forEach(result => {
             let key = '';
-            switch (chartType) {
-                case 'model':
-                    key = result.llmResponse.model.name;
-                    break;
-                case 'style':
-                    key = result.categories.style || 'default';
-                    break;
-                case 'length':
-                    key = result.categories.length || 'default';
-                    break;
+            if (selectedCategory === 'model') {
+                key = result.llmResponse.model.name;
+            } else {
+                key = result.categories[selectedCategory] || 'default';
             }
 
             if (!groupedData[key]) {
                 groupedData[key] = { total: 0, count: 0 };
             }
-            groupedData[key].total += result.attributes[metric];
+            groupedData[key].total += result.attributes[selectedMetric];
             groupedData[key].count += 1;
         });
 
@@ -50,7 +45,7 @@ export const ResultsVisualization: React.FC<ResultsVisualizationProps> = ({ data
             name,
             value: total / count,
         }));
-    }, [data.results, chartType, metric]);
+    }, [data.results, selectedCategory, selectedMetric]);
 
     return (
         <div className="bg-white p-6 rounded-lg shadow-lg">
@@ -60,13 +55,15 @@ export const ResultsVisualization: React.FC<ResultsVisualizationProps> = ({ data
                         Group By
                     </label>
                     <select
-                        value={chartType}
-                        onChange={(e) => setChartType(e.target.value as ChartType)}
+                        value={selectedCategory}
+                        onChange={(e) => setSelectedCategory(e.target.value)}
                         className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                     >
-                        <option value="model">Model</option>
-                        <option value="style">Style</option>
-                        <option value="length">Length</option>
+                        {availableCategories.map(category => (
+                            <option key={category} value={category}>
+                                {category.charAt(0).toUpperCase() + category.slice(1)}
+                            </option>
+                        ))}
                     </select>
                 </div>
                 <div>
@@ -74,13 +71,15 @@ export const ResultsVisualization: React.FC<ResultsVisualizationProps> = ({ data
                         Metric
                     </label>
                     <select
-                        value={metric}
-                        onChange={(e) => setMetric(e.target.value as MetricType)}
+                        value={selectedMetric}
+                        onChange={(e) => setSelectedMetric(e.target.value)}
                         className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                     >
-                        <option value="emojiCount">Total Emojis</option>
-                        <option value="uniqueEmojiCount">Unique Emojis</option>
-                        <option value="emojiDensity">Emoji Density</option>
+                        {data.config.responseAttributes.map(attr => (
+                            <option key={attr.name} value={attr.name}>
+                                {attr.name.replace(/([A-Z])/g, ' $1').trim()}
+                            </option>
+                        ))}
                     </select>
                 </div>
             </div>
@@ -102,7 +101,7 @@ export const ResultsVisualization: React.FC<ResultsVisualizationProps> = ({ data
                         <Bar
                             dataKey="value"
                             fill="#4F46E5"
-                            name={metric}
+                            name={selectedMetric.replace(/([A-Z])/g, ' $1').trim()}
                         />
                     </BarChart>
                 </ResponsiveContainer>
@@ -117,20 +116,18 @@ export const ResultsVisualization: React.FC<ResultsVisualizationProps> = ({ data
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Model
                                 </th>
+                                {data.config.promptCategories.map(category => (
+                                    <th key={category.name} className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        {category.name}
+                                    </th>
+                                ))}
+                                {data.config.responseAttributes.map(attr => (
+                                    <th key={attr.name} className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        {attr.name.replace(/([A-Z])/g, ' $1').trim()}
+                                    </th>
+                                ))}
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Style
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Length
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Total Emojis
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Unique Emojis
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Emoji Density
+                                    Response
                                 </th>
                             </tr>
                         </thead>
@@ -140,20 +137,25 @@ export const ResultsVisualization: React.FC<ResultsVisualizationProps> = ({ data
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                         {result.llmResponse.model.name}
                                     </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                        {result.categories.style || 'default'}
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                        {result.categories.length || 'default'}
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                        {result.attributes.emojiCount}
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                        {result.attributes.uniqueEmojiCount}
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                        {result.attributes.emojiDensity.toFixed(3)}
+                                    {data.config.promptCategories.map(category => (
+                                        <td key={category.name} className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                            {result.categories[category.name] || 'default'}
+                                        </td>
+                                    ))}
+                                    {data.config.responseAttributes.map(attr => (
+                                        <td key={attr.name} className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                            {typeof result.attributes[attr.name] === 'number' 
+                                                ? result.attributes[attr.name].toFixed(3)
+                                                : result.attributes[attr.name]}
+                                        </td>
+                                    ))}
+                                    <td className="px-6 py-4 text-sm text-gray-900 max-w-md truncate">
+                                        <button
+                                            onClick={() => alert(result.llmResponse.response)}
+                                            className="text-blue-600 hover:text-blue-800"
+                                        >
+                                            View Response
+                                        </button>
                                     </td>
                                 </tr>
                             ))}

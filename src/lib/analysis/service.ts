@@ -1,21 +1,50 @@
 import { AnalysisConfig, AnalysisData, AnalysisResult } from '../types/analysis';
 import { LLMProviderFactory } from '../llm/factory';
 
+export interface AnalysisProgress {
+    totalPrompts: number;
+    completedPrompts: number;
+    modelProgress: Record<string, {
+        total: number;
+        completed: number;
+        failed: number;
+    }>;
+}
+
 export class AnalysisService {
     private config: AnalysisConfig;
     private results: AnalysisResult[] = [];
+    private progress: AnalysisProgress;
+    private progressCallback?: (progress: AnalysisProgress) => void;
 
-    constructor(config: AnalysisConfig) {
+    constructor(config: AnalysisConfig, onProgress?: (progress: AnalysisProgress) => void) {
         this.config = config;
+        this.progressCallback = onProgress;
+        this.progress = {
+            totalPrompts: 0,
+            completedPrompts: 0,
+            modelProgress: {},
+        };
     }
 
     async runAnalysis(): Promise<AnalysisData> {
         const allPrompts = this.generatePrompts();
         const results: AnalysisResult[] = [];
 
-        for (const model of this.config.models) {
-            const provider = LLMProviderFactory.getProvider(model.provider);
+        // Initialize progress tracking
+        this.progress.totalPrompts = allPrompts.length * this.config.models.length;
+        this.progress.modelProgress = Object.fromEntries(
+            this.config.models.map(model => [
+                model.name,
+                { total: allPrompts.length, completed: 0, failed: 0 }
+            ])
+        );
+        this.updateProgress();
 
+        // Run prompts in parallel for each model
+        await Promise.all(this.config.models.map(async model => {
+            const provider = LLMProviderFactory.getProvider(model.provider);
+            
             for (const prompt of allPrompts) {
                 try {
                     const llmResponse = await provider.generateResponse(model, prompt.prompt);
@@ -31,11 +60,18 @@ export class AnalysisService {
                         attributes,
                         categories: prompt.categories,
                     });
+
+                    // Update progress
+                    this.progress.completedPrompts++;
+                    this.progress.modelProgress[model.name].completed++;
+                    this.updateProgress();
                 } catch (error) {
                     console.error(`Error analyzing prompt for model ${model.name}:`, error);
+                    this.progress.modelProgress[model.name].failed++;
+                    this.updateProgress();
                 }
             }
-        }
+        }));
 
         this.results = results;
 
@@ -44,6 +80,12 @@ export class AnalysisService {
             results: this.results,
             timestamp: Date.now(),
         };
+    }
+
+    private updateProgress() {
+        if (this.progressCallback) {
+            this.progressCallback({ ...this.progress });
+        }
     }
 
     private generatePrompts(): Array<{ prompt: string; categories: Record<string, string> }> {

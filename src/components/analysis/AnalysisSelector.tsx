@@ -1,11 +1,13 @@
 import React from 'react';
 import { AnalysisConfig } from '@/lib/types/analysis';
+import { AnalysisProgress } from '@/lib/analysis/service';
 
 interface AnalysisSelectorProps {
     config: AnalysisConfig;
     onConfigChange: (config: AnalysisConfig) => void;
     onRunAnalysis: () => void;
     isRunning: boolean;
+    progress?: AnalysisProgress | null;
 }
 
 export const AnalysisSelector: React.FC<AnalysisSelectorProps> = ({
@@ -13,6 +15,7 @@ export const AnalysisSelector: React.FC<AnalysisSelectorProps> = ({
     onConfigChange,
     onRunAnalysis,
     isRunning,
+    progress,
 }) => {
     const handleModelToggle = (modelName: string) => {
         const updatedModels = config.models.map(model => ({

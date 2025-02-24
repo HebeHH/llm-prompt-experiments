@@ -12,6 +12,7 @@ export class AnthropicProvider extends BaseLLMProvider {
         }
         this.client = new Anthropic({
             apiKey: config.anthropicApiKey,
+            dangerouslyAllowBrowser: true
         });
     }
 
