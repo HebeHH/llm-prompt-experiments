@@ -82,7 +82,7 @@ export const ResultsVisualization: React.FC<ResultsVisualizationProps> = ({ data
             },
             ...(colorAxis ? { colorAxis } : {})
         };
-        setGraphs([...graphs, config]);
+        setGraphs([config, ...graphs]); // Add new graph at the start
     };
 
     const updateGraph = (id: string, newConfig: GraphConfig) => {

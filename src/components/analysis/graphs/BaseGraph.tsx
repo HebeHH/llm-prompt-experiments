@@ -20,7 +20,7 @@ export const BaseGraph: React.FC<BaseGraphProps> = ({ data, config, onConfigChan
         if (!required && !currentValue) return null;
 
         return (
-            <div>
+            <div className="min-w-[200px]">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                     {label}
                 </label>
@@ -64,12 +64,14 @@ export const BaseGraph: React.FC<BaseGraphProps> = ({ data, config, onConfigChan
                     Remove Graph
                 </button>
             </div>
-            <div className="grid grid-cols-2 gap-4 mb-6">
+            <div className="flex flex-wrap gap-4 mb-6">
                 {renderAxisSelector('xAxis', 'X Axis', 'categorical')}
                 {renderAxisSelector('yAxis', 'Y Axis', 'numerical')}
                 {renderAxisSelector('colorAxis', 'Color By', 'categorical', false)}
             </div>
-            {children}
+            <div className="pl-8">
+                {children}
+            </div>
         </div>
     );
 }; 

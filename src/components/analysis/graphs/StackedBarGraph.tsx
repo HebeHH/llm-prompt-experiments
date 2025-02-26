@@ -84,21 +84,25 @@ export const StackedBarGraph: React.FC<GraphProps> = (props) => {
     }, [data.results, config.colorAxis]);
 
     const chart = (
-        <div className="h-96">
+        <div className="h-[500px]">
             <ResponsiveContainer width="100%" height="100%">
                 <BarChart 
                     data={chartData}
                     layout="horizontal"
-                    margin={{ top: 30 }}
+                    margin={{ top: 30, left: 10, right: 10, bottom: 100 }}
                 >
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis
                         dataKey="name"
                         angle={-45}
                         textAnchor="end"
-                        height={80}
+                        height={100}
                         interval={0}
-                        label={{ value: config.xAxis.label, position: 'insideBottom', offset: -10 }}
+                        label={{ 
+                            value: config.xAxis.label, 
+                            position: 'bottom', 
+                            offset: -80
+                        }}
                     />
                     <YAxis
                         label={{ 
