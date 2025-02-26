@@ -1,9 +1,10 @@
 # TODOs
 
 
-### Minor notes
+### Recent notes
 * Hitting 'enter' when typing in a new prompt category or variable should automatically add it.
 * Automatically select word count and character count as the default result attributes.
+* Seeing several instances where a LLM call is failing with a status of 503, and the results are treating this like a successful request that came back with an empty response. We need a better way of handling this: retry mechanism, better error handling, etc. DON'T just treat a 503 (or any error) as a successful request. Don't add it to the results table. If we can't get a response back, that's fine - but it's not a real result.
 
 
 ## UI Notes
@@ -12,12 +13,13 @@
 * The "Raw Results" section should be collapsible.
 * Ability to sort the Raw Results by each of the columns
 * Use more interesting colors
-* There's currently three panels incolved here: Experiment Creation panel, Analysis Progress panel, and Results panel. Once the results are generated, the Analysis progress and experiment creation panels should automatically go off to the side. The user should be able to summon them back though.
+* Clicking "Run Analysis" doesn't always hide the experiment panel
 
 ## Functionality Notes
-* Download: Add a download button to the "Raw Results" section that downloads the results as a CSV file or a JSON file. If JSON, include the response.
+* Download: Add download buttons to the raw results section. We want a download CSV button which will download a CSV of just the results without the response data and then we also want a download experiment JSON button which will give a result a JSON download that contains the experiment parameters so that's the models, the prompt categories and options, the prompt variables and with the prompt categories both the category name as well as the actual prompt itself and then the full results JSON including the actual response.
 * API keys: Add a section to the UI where the user can add their own API keys. Use the .env for apikeys if it's available, but otherwise require them from the user. Model's aren't selectable unless there's an API key for them (either from the .env or from the user). Show an error message on hover
-* Open results in new tab: Ability to open the Results panel in a new tab, without the experiment creation and analysis progress panels. This will let the user keep track of them if they want to run multiple experiments.
+* Let's keep track of the prompt variables better. So prompt variables is an array and then for each prompt we send off as well as keeping track of the prompt category, lLm etc. We also want to keep track of the index of the prompt variable. And this should also be displayed in the raw results table as 'Prompt ID'.
+
 
 ## Broader Analysis Experiment Creation
 Let's rework the "Emoji Analysis" card to be a "Create Experiment" card. This will let the user create different experiments in the UI, without needing to edit the code of this repo. Componenterize this so we can update parts of it without needing to do the whole thing.
@@ -104,6 +106,34 @@ Once the Result Attributes section is added in properly, we can add more to the 
 
 ## Additional Graphs
 
+Start off by understanding the purpose of this repository; spec.md is a good place to start. However, we've then done a lot of work to make the experimental inputs configurable, so that we can use this repository for other analyses. That means we need to display data that we don't necessarily know the full structure of.
+
+However we know the general shape:
+
+* Models: The models are a data input axes. This is always a categorical axis.
+* Prompt categories: there can be multiple different user-defined prompt category groups, each with multiple category options. These are data input. These are always categorical.
+* Prompt variables: These can be ignored for data analysis.
+* Result attributes: There will always be at least one response attribute, but usually more. The result attributes are data output axes. These are typically numerical axes.
+
+So we want a graph library that can handle this: categorical input axes, numerical output axes, preferably multiple. We also want to be able to display multiple graphs at once, change the graphs around, and change what data the graphs display. Of course, within this, we need to make sure that the data type always matches the graph axes type (eg: numerical data for numerical axes, categorical data for categorical axes). We also want graphs to load in with sensible default axes, while those axis can be changed.
+
+It's probably best to add a field `dataType: 'numerical' | 'categorical'` to the result attribute right now. Currently, the result attributes are all numerical, but we may add categorical ones eventually. 
+
+### Previous graph discussion
+
+The dashboard will be a bit tricky, because we could have a varying amount of data axes (depending on how many prompt categories and response attributes we have). The dashboard will have knowledge of what all the models are, what all the prompt categories are, and what all the response attributes are. It should then let users be able to add in different graphs and display different combinations of data axes on the different graphs. Let's start with the ability to have a couple of basic graphs, with the user able to select which specific data axes they want to display.
+
+Most graphs will need to calculate summary statistics from the data axes. With the demo emoji example, if we have a box plot graph with LLM model on the x-axis and emojiCount on the y-axis, we need to calculate the quartiles, max, min and mean of the emojiCount for each LLM model. If we have a heatmap graph with LLM model on the x-axis, style on the y-axis, and emojiCount on the z-axis, we need to calculate the mean of the emojiCount for each combination of LLM model and style.
+
+Remember that we'll be doing other analyses in the future, so we need to design the dashboard in a way that's flexible enough to handle new analyses than just the demo emoji analysis.
+
+We can start relatively simple, with the ability to display a single graph, with the ability to select which specific data axes they want to display. We can expand this later.
+
+The graphing library you use is up to you, but it should be able to give us good looking graphs, and have a wide range of graph types.
+
+
+### General thoughts on types of graph
+
 Another big one! More graphs! We want there to be a wide range of graphs for the userto choose from, eg:
 * Box plot
 * Heatmap
@@ -116,10 +146,37 @@ Wherever possible, we want to be able to have multiple axis of data for the same
 
 The user should be able to add and remove graphs, as well as change the data axes for each graph. They should have a lot of flexibility in which data axes to use for which graphs
 
-* Create new graph options 
-* All graph options should have the ability to select which data axes to use, and will calculate the appropriate data statistics if needed
-* Ability for user to add or remove graphs from the UI (should be able to add multiple instances of the same graph)
+### Considerations
 
+There's a lot of complexity with the graphs. They need to be able to be added and removed. When they're added in, they should come with sensible default axes, and we'll define what those are when the graph is added. When the data axes are changed, the graph should be updated to reflect the new data axes. this may involve calculating new summary statistics to display.
+
+For each graph, the axes and type of axes (categorical or numerical) should be defined in the typespec. We then know what type of data to expect for each graph. We can prefill each graph with default axes according to the data type, and allow the user to change the axes depending on the data type. 
+
+```typescript
+categoricalDataAxes = ['model', 'promptCategory1', 'promptCategory2', ..., 'resultAttribute2', ...]
+numericalDataAxes = ['resultAttribute1', 'resultAttribute3', ...]
+```
+
+Then when a graph is added, we can prefill the axes according to the data type. If it's got two categorical data axes and a numerical data axis, it would be prefilled with 'model', 'promptCategory1' and 'resultAttribute1'. The user can then change the axes to whatever they want, within the correct data type.
+
+Each time a new graph is added or the data axes are changed, we may need to calculate new summary statistics to display. The top results analysis component only knows the raw data, so we'll need to make sure graph components can calculate the summary statistics they needs.
+
+### Next steps
+
+Our first step is going to be to take the bar chart currently displayed on the dashboard and move it into a graph component, that can be added and removed from the dashboard. We'll also create a component for a stacked bar chart, with the same functionality.
+
+Default Bar chart Axes:
+- X axes (input): model
+- Y axes (output): first result attribute
+
+Default Stacked bar chart Axes:
+- X axes (input): model
+- Y axes (output): first result attribute
+- Color axis: first prompt category group.
+
+Preferably the data axes should just be pulled from the top of the relevant data axes type arrays (categorical or numerical) and then be switched within that.
+
+The user should be able to add and remove these two graphs. Let's start with just these two types of graph for now, but be aware that we'll add more types of graphs later. We may even add one with 2 numerical axes, for scatter plots, so be able to handle that (it would just use the first two result attributes).
 
 # Done
 * Created ExperimentCreator component with all necessary sections

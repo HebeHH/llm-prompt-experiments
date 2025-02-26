@@ -1,111 +1,129 @@
-import React, { useMemo, useState } from 'react';
-import {
-    BarChart,
-    Bar,
-    XAxis,
-    YAxis,
-    CartesianGrid,
-    Tooltip,
-    Legend,
-    ResponsiveContainer,
-} from 'recharts';
-import { AnalysisData, AnalysisResult } from '@/lib/types/analysis';
+import React, { useState } from 'react';
+import { AnalysisData } from '@/lib/types/analysis';
+import { GraphConfig, GraphType, DEFAULT_GRAPH_CONFIGS, getAvailableAxes } from '@/lib/types/graphs';
+import { BarGraph } from './graphs/BarGraph';
+import { StackedBarGraph } from './graphs/StackedBarGraph';
+import { v4 as uuidv4 } from 'uuid';
 
 interface ResultsVisualizationProps {
     data: AnalysisData;
 }
 
+const AddChartModal: React.FC<{
+    onAdd: (type: GraphType) => void;
+    onClose: () => void;
+}> = ({ onAdd, onClose }) => {
+    return (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white p-6 rounded-lg shadow-xl max-w-md w-full">
+                <h3 className="text-lg font-semibold mb-4">Add New Chart</h3>
+                <div className="space-y-4">
+                    <button
+                        onClick={() => { onAdd('bar'); onClose(); }}
+                        className="w-full p-4 text-left border rounded hover:bg-gray-50"
+                    >
+                        <div className="font-medium">Bar Chart</div>
+                        <div className="text-sm text-gray-500">Compare values across categories</div>
+                    </button>
+                    <button
+                        onClick={() => { onAdd('stackedBar'); onClose(); }}
+                        className="w-full p-4 text-left border rounded hover:bg-gray-50"
+                    >
+                        <div className="font-medium">Stacked Bar Chart</div>
+                        <div className="text-sm text-gray-500">Compare values across categories with an additional grouping</div>
+                    </button>
+                </div>
+                <div className="mt-6 flex justify-end">
+                    <button
+                        onClick={onClose}
+                        className="px-4 py-2 text-gray-600 hover:text-gray-800"
+                    >
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 export const ResultsVisualization: React.FC<ResultsVisualizationProps> = ({ data }) => {
-    const [selectedCategory, setSelectedCategory] = useState<string>('model');
-    const [selectedMetric, setSelectedMetric] = useState<string>(data.config.responseAttributes[0].name);
-
-    const availableCategories = useMemo(() => {
-        return ['model', ...data.config.promptCategories.map(cat => cat.name)];
-    }, [data.config.promptCategories]);
-
-    const chartData = useMemo(() => {
-        const groupedData: Record<string, { total: number; count: number }> = {};
-
-        data.results.forEach(result => {
-            let key = '';
-            if (selectedCategory === 'model') {
-                key = result.llmResponse.model.name;
-            } else {
-                key = result.categories[selectedCategory] || 'default';
+    const { categorical, numerical } = getAvailableAxes(data);
+    const [showAddModal, setShowAddModal] = useState(false);
+    const [graphs, setGraphs] = useState<GraphConfig[]>(() => {
+        // Start with a default bar graph
+        const baseConfig = DEFAULT_GRAPH_CONFIGS.bar;
+        return [{
+            ...baseConfig,
+            id: uuidv4(),
+            title: 'Analysis Results',
+            yAxis: {
+                ...baseConfig.yAxis,
+                ...numerical[0]
             }
+        }];
+    });
 
-            if (!groupedData[key]) {
-                groupedData[key] = { total: 0, count: 0 };
-            }
-            groupedData[key].total += result.attributes[selectedMetric];
-            groupedData[key].count += 1;
-        });
+    const addGraph = (type: GraphType) => {
+        const baseConfig = DEFAULT_GRAPH_CONFIGS[type];
+        // For stacked bar chart, ensure we pick different axes
+        let colorAxis = undefined;
+        if (type === 'stackedBar' && categorical.length > 1) {
+            // Pick a different category than the x-axis for color
+            colorAxis = categorical.find(cat => cat.name !== baseConfig.xAxis.name) || categorical[0];
+        }
+        
+        const config: GraphConfig = {
+            ...baseConfig,
+            id: uuidv4(),
+            title: `New ${type} Graph`,
+            yAxis: {
+                ...baseConfig.yAxis,
+                ...numerical[0]
+            },
+            ...(colorAxis ? { colorAxis } : {})
+        };
+        setGraphs([...graphs, config]);
+    };
 
-        return Object.entries(groupedData).map(([name, { total, count }]) => ({
-            name,
-            value: total / count,
-        }));
-    }, [data.results, selectedCategory, selectedMetric]);
+    const updateGraph = (id: string, newConfig: GraphConfig) => {
+        setGraphs(graphs.map(g => g.id === id ? newConfig : g));
+    };
+
+    const removeGraph = (id: string) => {
+        setGraphs(graphs.filter(g => g.id !== id));
+    };
 
     return (
-        <div className="bg-white p-6 rounded-lg shadow-lg">
-            <div className="flex justify-between mb-6">
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Group By
-                    </label>
-                    <select
-                        value={selectedCategory}
-                        onChange={(e) => setSelectedCategory(e.target.value)}
-                        className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                    >
-                        {availableCategories.map(category => (
-                            <option key={category} value={category}>
-                                {category.charAt(0).toUpperCase() + category.slice(1)}
-                            </option>
-                        ))}
-                    </select>
-                </div>
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Metric
-                    </label>
-                    <select
-                        value={selectedMetric}
-                        onChange={(e) => setSelectedMetric(e.target.value)}
-                        className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                    >
-                        {data.config.responseAttributes.map(attr => (
-                            <option key={attr.name} value={attr.name}>
-                                {attr.name.replace(/([A-Z])/g, ' $1').trim()}
-                            </option>
-                        ))}
-                    </select>
-                </div>
+        <div className="space-y-6">
+            <div className="flex justify-between items-center">
+                <h2 className="text-2xl font-bold">Analysis Results</h2>
+                <button
+                    onClick={() => setShowAddModal(true)}
+                    className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                >
+                    Add New Chart
+                </button>
             </div>
 
-            <div className="h-96">
-                <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={chartData}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis
-                            dataKey="name"
-                            angle={-45}
-                            textAnchor="end"
-                            height={80}
-                            interval={0}
-                        />
-                        <YAxis />
-                        <Tooltip />
-                        <Legend />
-                        <Bar
-                            dataKey="value"
-                            fill="#4F46E5"
-                            name={selectedMetric.replace(/([A-Z])/g, ' $1').trim()}
-                        />
-                    </BarChart>
-                </ResponsiveContainer>
-            </div>
+            {graphs.map(graph => {
+                const GraphComponent = graph.type === 'bar' ? BarGraph : StackedBarGraph;
+                return (
+                    <GraphComponent
+                        key={graph.id}
+                        data={data}
+                        config={graph}
+                        onConfigChange={(newConfig) => updateGraph(graph.id, newConfig)}
+                        onRemove={() => removeGraph(graph.id)}
+                    />
+                );
+            })}
+
+            {showAddModal && (
+                <AddChartModal
+                    onAdd={addGraph}
+                    onClose={() => setShowAddModal(false)}
+                />
+            )}
 
             <div className="mt-8">
                 <h3 className="text-lg font-semibold mb-4">Raw Results</h3>
