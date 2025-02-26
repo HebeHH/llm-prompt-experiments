@@ -184,15 +184,14 @@ export const BoxPlotGraph: React.FC<GraphProps> = (props) => {
                             );
                         }}
                     />
-                    <Legend />
-                    <Bar stackId="a" dataKey="min" fill="none" isAnimationActive={false} hide />
-                    <Bar stackId="a" dataKey="bar" shape={<HorizonBar />} isAnimationActive={false} hide />
-                    <Bar stackId="a" dataKey="bottomWhisker" shape={<DotBar />} isAnimationActive={false} hide />
-                    <Bar stackId="a" dataKey="bottomBox" fill={COLORS[0]} isAnimationActive={false} barSize={40} hide />
-                    <Bar stackId="a" dataKey="bar" shape={<HorizonBar />} isAnimationActive={false} hide />
-                    <Bar stackId="a" dataKey="topBox" fill={COLORS[0]} isAnimationActive={false} barSize={40} hide />
-                    <Bar stackId="a" dataKey="topWhisker" shape={<DotBar />} isAnimationActive={false} hide />
-                    <Bar stackId="a" dataKey="bar" shape={<HorizonBar />} isAnimationActive={false} hide />
+                    <Bar stackId="a" dataKey="min" fill="none" isAnimationActive={false} />
+                    <Bar stackId="a" dataKey="bar" shape={<HorizonBar />} isAnimationActive={false} />
+                    <Bar stackId="a" dataKey="bottomWhisker" shape={<DotBar />} isAnimationActive={false} />
+                    <Bar stackId="a" dataKey="bottomBox" fill={COLORS[0]} isAnimationActive={false} />
+                    <Bar stackId="a" dataKey="bar" shape={<HorizonBar />} isAnimationActive={false} />
+                    <Bar stackId="a" dataKey="topBox" fill={COLORS[0]} isAnimationActive={false} />
+                    <Bar stackId="a" dataKey="topWhisker" shape={<DotBar />} isAnimationActive={false} />
+                    <Bar stackId="a" dataKey="bar" shape={<HorizonBar />} isAnimationActive={false} />
                     <Scatter dataKey="average" fill="red" name="Average" />
                 </ComposedChart>
             </ResponsiveContainer>

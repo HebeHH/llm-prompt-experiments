@@ -90,6 +90,7 @@ export const HistogramGraph: React.FC<GraphProps> = (props) => {
         return Object.entries(bins)
             .map(([binStart, counts]) => ({
                 binStart: parseFloat(binStart).toFixed(2),
+                binSize: binSize,
                 ...counts
             }));
     }, [data.results, histogramConfig]);
@@ -115,10 +116,28 @@ export const HistogramGraph: React.FC<GraphProps> = (props) => {
                             position: 'insideLeft'
                         }}
                     />
-                    <Tooltip />
+                    <Tooltip 
+                        content={({ payload, label }) => {
+                            if (!payload || payload.length === 0) return null;
+                            const nextBinStart = (parseFloat(label) + (payload[0].payload.binSize || 0)).toFixed(2);
+                            const total = payload.reduce((sum, entry) => sum + (entry.value as number || 0), 0);
+                            
+                            return (
+                                <div className="bg-white p-2 border rounded shadow">
+                                    <p className="font-medium">Range: {label} - {nextBinStart}</p>
+                                    <p className="font-medium">Total: {total}</p>
+                                    {payload.map(entry => (
+                                        <p key={entry.name}>
+                                            {entry.name}: {entry.value}
+                                        </p>
+                                    ))}
+                                </div>
+                            );
+                        }}
+                    />
                     <Legend />
                     {(histogramConfig.colorAxis?.name === 'model'
-                        ? data.results.map(r => r.llmResponse.model.name)
+                        ? [...new Set(data.results.map(r => r.llmResponse.model.name))]
                         : histogramConfig.colorAxis
                             ? [...new Set(data.results.map(r => r.categories[histogramConfig.colorAxis!.name] || 'default'))]
                             : ['default']
@@ -126,8 +145,9 @@ export const HistogramGraph: React.FC<GraphProps> = (props) => {
                         <Bar
                             key={category}
                             dataKey={category}
+                            stackId="a"
                             fill={COLORS[index % COLORS.length]}
-                            barSize={40}
+                            name={category}
                         />
                     ))}
                 </ComposedChart>
