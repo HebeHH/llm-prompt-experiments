@@ -26,7 +26,7 @@ export const BaseGraph: React.FC<BaseGraphProps> = ({ data, config, onConfigChan
                 case 'boxplot':
                     return axis === 'xAxis' || axis === 'yAxis';
                 case 'histogram':
-                    return axis === 'yAxis' || axis === 'colorAxis';
+                    return axis === 'yAxis';
                 default:
                     return false;
             }

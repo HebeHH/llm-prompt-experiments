@@ -137,7 +137,7 @@ export const HistogramGraph: React.FC<GraphProps> = (props) => {
                     />
                     <Legend />
                     {(histogramConfig.colorAxis?.name === 'model'
-                        ? [...new Set(data.results.map(r => r.llmResponse.model.name))]
+                        ? data.results.map(r => r.llmResponse.model.name)
                         : histogramConfig.colorAxis
                             ? [...new Set(data.results.map(r => r.categories[histogramConfig.colorAxis!.name] || 'default'))]
                             : ['default']
