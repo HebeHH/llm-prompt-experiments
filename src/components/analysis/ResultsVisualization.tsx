@@ -1,8 +1,23 @@
 import React, { useState } from 'react';
 import { AnalysisData } from '@/lib/types/analysis';
-import { GraphConfig, GraphType, DEFAULT_GRAPH_CONFIGS, getAvailableAxes } from '@/lib/types/graphs';
+import { 
+    GraphConfig, 
+    GraphType, 
+    DEFAULT_GRAPH_CONFIGS, 
+    getAvailableAxes,
+    BarGraphConfig,
+    StackedBarGraphConfig,
+    GroupedBarGraphConfig,
+    RadarGraphConfig,
+    BoxPlotGraphConfig,
+    HistogramGraphConfig
+} from '@/lib/types/graphs';
 import { BarGraph } from './graphs/BarGraph';
 import { StackedBarGraph } from './graphs/StackedBarGraph';
+import { GroupedBarGraph } from './graphs/GroupedBarGraph';
+import { RadarGraph } from './graphs/RadarGraph';
+import { BoxPlotGraph } from './graphs/BoxPlotGraph';
+import { HistogramGraph } from './graphs/HistogramGraph';
 import { v4 as uuidv4 } from 'uuid';
 
 interface ResultsVisualizationProps {
@@ -17,7 +32,7 @@ const AddChartModal: React.FC<{
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white p-6 rounded-lg shadow-xl max-w-md w-full">
                 <h3 className="text-lg font-semibold mb-4">Add New Chart</h3>
-                <div className="space-y-4">
+                <div className="space-y-4 max-h-[60vh] overflow-y-auto">
                     <button
                         onClick={() => { onAdd('bar'); onClose(); }}
                         className="w-full p-4 text-left border rounded hover:bg-gray-50"
@@ -30,7 +45,35 @@ const AddChartModal: React.FC<{
                         className="w-full p-4 text-left border rounded hover:bg-gray-50"
                     >
                         <div className="font-medium">Stacked Bar Chart</div>
-                        <div className="text-sm text-gray-500">Compare values across categories with an additional grouping</div>
+                        <div className="text-sm text-gray-500">Compare values across categories with stacking</div>
+                    </button>
+                    <button
+                        onClick={() => { onAdd('groupedBar'); onClose(); }}
+                        className="w-full p-4 text-left border rounded hover:bg-gray-50"
+                    >
+                        <div className="font-medium">Grouped Bar Chart</div>
+                        <div className="text-sm text-gray-500">Compare values across categories side by side</div>
+                    </button>
+                    <button
+                        onClick={() => { onAdd('radar'); onClose(); }}
+                        className="w-full p-4 text-left border rounded hover:bg-gray-50"
+                    >
+                        <div className="font-medium">Radar Chart</div>
+                        <div className="text-sm text-gray-500">Compare multiple metrics in a radial layout</div>
+                    </button>
+                    <button
+                        onClick={() => { onAdd('boxplot'); onClose(); }}
+                        className="w-full p-4 text-left border rounded hover:bg-gray-50"
+                    >
+                        <div className="font-medium">Box Plot</div>
+                        <div className="text-sm text-gray-500">Show statistical distribution with quartiles and outliers</div>
+                    </button>
+                    <button
+                        onClick={() => { onAdd('histogram'); onClose(); }}
+                        className="w-full p-4 text-left border rounded hover:bg-gray-50"
+                    >
+                        <div className="font-medium">Histogram</div>
+                        <div className="text-sm text-gray-500">Display frequency distribution of a numerical variable</div>
                     </button>
                 </div>
                 <div className="mt-6 flex justify-end">
@@ -65,24 +108,74 @@ export const ResultsVisualization: React.FC<ResultsVisualizationProps> = ({ data
 
     const addGraph = (type: GraphType) => {
         const baseConfig = DEFAULT_GRAPH_CONFIGS[type];
-        // For stacked bar chart, ensure we pick different axes
-        let colorAxis = undefined;
-        if (type === 'stackedBar' && categorical.length > 1) {
-            // Pick a different category than the x-axis for color
-            colorAxis = categorical.find(cat => cat.name !== baseConfig.xAxis.name) || categorical[0];
+        let newConfig: GraphConfig;
+
+        // Add default values based on graph type
+        switch (type) {
+            case 'bar':
+            case 'boxplot': {
+                const typedBaseConfig = baseConfig as typeof DEFAULT_GRAPH_CONFIGS['bar' | 'boxplot'];
+                newConfig = {
+                    ...baseConfig,
+                    id: uuidv4(),
+                    title: `New ${type} Graph`,
+                    yAxis: {
+                        ...typedBaseConfig.yAxis,
+                        ...numerical[0]
+                    }
+                } as BarGraphConfig | BoxPlotGraphConfig;
+                break;
+            }
+            case 'stackedBar':
+            case 'groupedBar': {
+                const typedBaseConfig = baseConfig as typeof DEFAULT_GRAPH_CONFIGS['stackedBar' | 'groupedBar'];
+                newConfig = {
+                    ...baseConfig,
+                    id: uuidv4(),
+                    title: `New ${type} Graph`,
+                    yAxis: {
+                        ...typedBaseConfig.yAxis,
+                        ...numerical[0]
+                    },
+                    colorAxis: categorical.length > 1
+                        ? categorical.find(cat => cat.name !== typedBaseConfig.xAxis.name) || categorical[0]
+                        : categorical[0]
+                } as StackedBarGraphConfig | GroupedBarGraphConfig;
+                break;
+            }
+            case 'radar': {
+                newConfig = {
+                    ...baseConfig,
+                    id: uuidv4(),
+                    title: `New ${type} Graph`,
+                    metrics: numerical.slice(0, Math.min(5, numerical.length)),
+                    colorAxis: categorical[0]
+                } as RadarGraphConfig;
+                break;
+            }
+            case 'histogram': {
+                const typedBaseConfig = baseConfig as typeof DEFAULT_GRAPH_CONFIGS['histogram'];
+                newConfig = {
+                    ...baseConfig,
+                    id: uuidv4(),
+                    title: `New ${type} Graph`,
+                    yAxis: {
+                        ...typedBaseConfig.yAxis,
+                        ...numerical[0]
+                    }
+                } as HistogramGraphConfig;
+                break;
+            }
+            default: {
+                newConfig = {
+                    ...baseConfig,
+                    id: uuidv4(),
+                    title: `New ${type} Graph`
+                } as GraphConfig;
+            }
         }
-        
-        const config: GraphConfig = {
-            ...baseConfig,
-            id: uuidv4(),
-            title: `New ${type} Graph`,
-            yAxis: {
-                ...baseConfig.yAxis,
-                ...numerical[0]
-            },
-            ...(colorAxis ? { colorAxis } : {})
-        };
-        setGraphs([config, ...graphs]); // Add new graph at the start
+
+        setGraphs([newConfig, ...graphs]); // Add new graph at the start
     };
 
     const updateGraph = (id: string, newConfig: GraphConfig) => {
@@ -106,7 +199,29 @@ export const ResultsVisualization: React.FC<ResultsVisualizationProps> = ({ data
             </div>
 
             {graphs.map(graph => {
-                const GraphComponent = graph.type === 'bar' ? BarGraph : StackedBarGraph;
+                let GraphComponent;
+                switch (graph.type) {
+                    case 'bar':
+                        GraphComponent = BarGraph;
+                        break;
+                    case 'stackedBar':
+                        GraphComponent = StackedBarGraph;
+                        break;
+                    case 'groupedBar':
+                        GraphComponent = GroupedBarGraph;
+                        break;
+                    case 'radar':
+                        GraphComponent = RadarGraph;
+                        break;
+                    case 'boxplot':
+                        GraphComponent = BoxPlotGraph;
+                        break;
+                    case 'histogram':
+                        GraphComponent = HistogramGraph;
+                        break;
+                    default:
+                        GraphComponent = BarGraph;
+                }
                 return (
                     <GraphComponent
                         key={graph.id}

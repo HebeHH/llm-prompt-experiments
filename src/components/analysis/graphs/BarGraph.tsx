@@ -9,27 +9,31 @@ import {
     Legend,
     ResponsiveContainer,
 } from 'recharts';
-import { GraphProps } from '@/lib/types/graphs';
+import { GraphProps, BarGraphConfig } from '@/lib/types/graphs';
 import { BaseGraph } from './BaseGraph';
 
 export const BarGraph: React.FC<GraphProps> = (props) => {
     const { data, config } = props;
+    
+    // Type guard
+    if (config.type !== 'bar') return null;
+    const barConfig = config as BarGraphConfig;
 
     const chartData = useMemo(() => {
         const groupedData: Record<string, { total: number; count: number }> = {};
 
         data.results.forEach(result => {
             let key = '';
-            if (config.xAxis.name === 'model') {
+            if (barConfig.xAxis.name === 'model') {
                 key = result.llmResponse.model.name;
             } else {
-                key = result.categories[config.xAxis.name] || 'default';
+                key = result.categories[barConfig.xAxis.name] || 'default';
             }
 
             if (!groupedData[key]) {
                 groupedData[key] = { total: 0, count: 0 };
             }
-            groupedData[key].total += result.attributes[config.yAxis.name];
+            groupedData[key].total += result.attributes[barConfig.yAxis.name];
             groupedData[key].count += 1;
         });
 
@@ -37,7 +41,7 @@ export const BarGraph: React.FC<GraphProps> = (props) => {
             name,
             value: total / count,
         }));
-    }, [data.results, config.xAxis.name, config.yAxis.name]);
+    }, [data.results, barConfig.xAxis.name, barConfig.yAxis.name]);
 
     const chart = (
         <div className="h-[500px]">
@@ -45,24 +49,25 @@ export const BarGraph: React.FC<GraphProps> = (props) => {
                 <BarChart 
                     data={chartData}
                     layout="horizontal"
-                    margin={{ top: 30, left: 10, right: 10, bottom: 100 }}
+                    margin={{ top: 30, left: 50, right: 30, bottom: 60 }}
                 >
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis
                         dataKey="name"
                         angle={-45}
                         textAnchor="end"
-                        height={100}
+                        height={60}
                         interval={0}
                         label={{ 
-                            value: config.xAxis.label, 
-                            position: 'bottom', 
-                            offset: -80
+                            value: barConfig.xAxis.label, 
+                            position: 'insideBottom',
+                            offset: -15,
+                            style: { textAnchor: 'middle' }
                         }}
                     />
                     <YAxis
                         label={{ 
-                            value: config.yAxis.label,
+                            value: barConfig.yAxis.label,
                             angle: -90,
                             position: 'insideLeft'
                         }}
@@ -74,8 +79,8 @@ export const BarGraph: React.FC<GraphProps> = (props) => {
                     />
                     <Bar
                         dataKey="value"
-                        fill="#4F46E5"
-                        name={config.yAxis.label}
+                        fill="#93C5FD"
+                        name={barConfig.yAxis.label}
                     />
                 </BarChart>
             </ResponsiveContainer>

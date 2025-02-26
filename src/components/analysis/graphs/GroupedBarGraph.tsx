@@ -9,7 +9,7 @@ import {
     Legend,
     ResponsiveContainer,
 } from 'recharts';
-import { GraphProps, StackedBarGraphConfig } from '@/lib/types/graphs';
+import { GraphProps, GroupedBarGraphConfig } from '@/lib/types/graphs';
 import { BaseGraph } from './BaseGraph';
 
 const COLORS = [
@@ -23,30 +23,31 @@ const COLORS = [
     '#FDBA74'  // orange-300
 ];
 
-export const StackedBarGraph: React.FC<GraphProps> = (props) => {
+export const GroupedBarGraph: React.FC<GraphProps> = (props) => {
     const { data, config } = props;
 
     // Type guard
-    if (config.type !== 'stackedBar') return null;
-    const stackedConfig = config as StackedBarGraphConfig;
+    if (config.type !== 'groupedBar') return null;
+    const groupedConfig = config as GroupedBarGraphConfig;
 
     const chartData = useMemo(() => {
         const groupedData: Record<string, Record<string, number[]>> = {};
+        const colorCategories = new Set<string>();
 
         // Group data by x-axis and color categories
         data.results.forEach(result => {
             let xKey = '';
-            if (stackedConfig.xAxis.name === 'model') {
+            if (groupedConfig.xAxis.name === 'model') {
                 xKey = result.llmResponse.model.name;
             } else {
-                xKey = result.categories[stackedConfig.xAxis.name] || 'default';
+                xKey = result.categories[groupedConfig.xAxis.name] || 'default';
             }
 
             let colorKey = '';
-            if (stackedConfig.colorAxis.name === 'model') {
+            if (groupedConfig.colorAxis.name === 'model') {
                 colorKey = result.llmResponse.model.name;
             } else {
-                colorKey = result.categories[stackedConfig.colorAxis.name] || 'default';
+                colorKey = result.categories[groupedConfig.colorAxis.name] || 'default';
             }
 
             if (!groupedData[xKey]) {
@@ -56,13 +57,15 @@ export const StackedBarGraph: React.FC<GraphProps> = (props) => {
                 groupedData[xKey][colorKey] = [];
             }
 
-            groupedData[xKey][colorKey].push(result.attributes[stackedConfig.yAxis.name]);
+            groupedData[xKey][colorKey].push(result.attributes[groupedConfig.yAxis.name]);
+            colorCategories.add(colorKey);
         });
 
         // Calculate averages and format data for the chart
         return Object.entries(groupedData).map(([xKey, colorGroups]) => {
             const entry: Record<string, any> = { name: xKey };
-            Object.entries(colorGroups).forEach(([colorKey, values]) => {
+            colorCategories.forEach(colorKey => {
+                const values = colorGroups[colorKey] || [];
                 if (values.length > 0) {
                     const avg = values.reduce((a, b) => a + b, 0) / values.length;
                     entry[colorKey] = avg;
@@ -70,26 +73,26 @@ export const StackedBarGraph: React.FC<GraphProps> = (props) => {
             });
             return entry;
         });
-    }, [data.results, stackedConfig.xAxis.name, stackedConfig.yAxis.name, stackedConfig.colorAxis.name]);
+    }, [data.results, groupedConfig.xAxis.name, groupedConfig.yAxis.name, groupedConfig.colorAxis.name]);
 
     const colorCategories = useMemo(() => {
         const categories = new Set<string>();
         data.results.forEach(result => {
             let colorKey = '';
-            if (stackedConfig.colorAxis.name === 'model') {
+            if (groupedConfig.colorAxis.name === 'model') {
                 colorKey = result.llmResponse.model.name;
             } else {
-                colorKey = result.categories[stackedConfig.colorAxis.name] || 'default';
+                colorKey = result.categories[groupedConfig.colorAxis.name] || 'default';
             }
             categories.add(colorKey);
         });
         return Array.from(categories);
-    }, [data.results, stackedConfig.colorAxis.name]);
+    }, [data.results, groupedConfig.colorAxis.name]);
 
     const chart = (
         <div className="h-[500px]">
             <ResponsiveContainer width="100%" height="100%">
-                <BarChart 
+                <BarChart
                     data={chartData}
                     margin={{ top: 30, left: 50, right: 30, bottom: 60 }}
                 >
@@ -101,7 +104,7 @@ export const StackedBarGraph: React.FC<GraphProps> = (props) => {
                         height={60}
                         interval={0}
                         label={{ 
-                            value: stackedConfig.xAxis.label, 
+                            value: groupedConfig.xAxis.label, 
                             position: 'insideBottom',
                             offset: -15,
                             style: { textAnchor: 'middle' }
@@ -109,7 +112,7 @@ export const StackedBarGraph: React.FC<GraphProps> = (props) => {
                     />
                     <YAxis
                         label={{ 
-                            value: stackedConfig.yAxis.label,
+                            value: groupedConfig.yAxis.label,
                             angle: -90,
                             position: 'insideLeft'
                         }}
@@ -120,7 +123,6 @@ export const StackedBarGraph: React.FC<GraphProps> = (props) => {
                         <Bar
                             key={category}
                             dataKey={category}
-                            stackId="a"
                             fill={COLORS[index % COLORS.length]}
                             name={category}
                         />
