@@ -10,6 +10,7 @@ export interface PromptCategory {
 
 export interface ResponseAttribute {
     name: string;
+    description: string;
     function: (response: string) => number;
 }
 
