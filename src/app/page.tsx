@@ -6,6 +6,7 @@ import { ResultsVisualization } from '@/components/analysis/ResultsVisualization
 import { AnalysisService, AnalysisProgress } from '@/lib/analysis/service';
 import { LLMProviderFactory } from '@/lib/llm/factory';
 import { AnalysisData, AnalysisConfig } from '@/lib/types/analysis';
+import { LLMProvider } from '@/lib/types/llm';
 
 interface ExperimentConfigViewProps {
     config: AnalysisConfig;
@@ -56,9 +57,23 @@ const ExperimentConfigView: React.FC<ExperimentConfigViewProps> = ({ config, onC
                 </div>
                 <div>
                     <h4 className="font-medium mb-2">Prompt Variables</h4>
+                    <ul className="list-decimal list-inside space-y-1 text-gray-600">
+                        {config.promptVariables.map((variable, index) => (
+                            <li key={index} className="flex items-start">
+                                <span className="mr-2">{index + 1}.</span>
+                                <span className="flex-1">{variable}</span>
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+                <div>
+                    <h4 className="font-medium mb-2">Response Attributes</h4>
                     <ul className="list-disc list-inside space-y-1 text-gray-600">
-                        {config.promptVariables.map(variable => (
-                            <li key={variable}>{variable}</li>
+                        {config.responseAttributes.map(attr => (
+                            <li key={attr.name}>
+                                {attr.name}
+                                <span className="text-gray-500"> - {attr.description}</span>
+                            </li>
                         ))}
                     </ul>
                 </div>
@@ -72,6 +87,11 @@ export default function Home() {
     const [showExperimentPanel, setShowExperimentPanel] = useState(false);
     const [showConfigView, setShowConfigView] = useState(false);
     const [isRunning, setIsRunning] = useState(false);
+    const [apiKeys, setApiKeys] = useState<Record<LLMProvider, string>>({
+        anthropic: process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY || '',
+        google: process.env.NEXT_PUBLIC_GOOGLE_API_KEY || '',
+        openai: process.env.NEXT_PUBLIC_OPENAI_API_KEY || ''
+    });
     const [config, setConfig] = useState<AnalysisConfig>({
         name: 'New Experiment',
         description: 'A new experiment configuration',
@@ -94,16 +114,17 @@ export default function Home() {
     const handleRunAnalysis = async () => {
         setIsRunning(true);
         setCurrentView('progress');
+        setShowExperimentPanel(false);
         scrollToTop();
         setError(null);
         setProgress(null);
 
         try {
-            // Initialize LLM providers with API keys from environment variables
+            // Initialize LLM providers with API keys
             LLMProviderFactory.initialize({
-                anthropicApiKey: process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY,
-                googleApiKey: process.env.NEXT_PUBLIC_GOOGLE_API_KEY,
-                openaiApiKey: process.env.NEXT_PUBLIC_OPENAI_API_KEY,
+                anthropicApiKey: apiKeys.anthropic,
+                googleApiKey: apiKeys.google,
+                openaiApiKey: apiKeys.openai,
             });
 
             const analysisService = new AnalysisService(config, (progress) => {
@@ -129,6 +150,10 @@ export default function Home() {
     const handleShowConfig = () => {
         setShowConfigView(true);
         setShowExperimentPanel(false);
+    };
+
+    const handleApiKeysChange = (keys: Record<LLMProvider, string>) => {
+        setApiKeys(keys);
     };
 
     return (
@@ -178,6 +203,7 @@ export default function Home() {
                                         onConfigChange={setConfig}
                                         onRunAnalysis={handleRunAnalysis}
                                         isRunning={isRunning}
+                                        onApiKeysChange={handleApiKeysChange}
                                     />
                                 </div>
                             </div>
@@ -187,17 +213,20 @@ export default function Home() {
                     {/* Progress Panel */}
                     {currentView === 'progress' && progress && (
                         <div className="w-full">
-                            <div className="bg-white rounded-lg shadow p-6">
-                                <h2 className="text-xl font-semibold mb-6">Analysis Progress</h2>
-                                <div className="space-y-6">
-                                    <div className="space-y-2">
-                                        <div className="flex justify-between text-sm">
+                            <div className="bg-white rounded-lg shadow">
+                                <div className="p-6">
+                                    <h2 className="text-xl font-semibold mb-4">Analysis Progress</h2>
+                                    <div className="mb-6">
+                                        <div className="flex justify-between text-sm mb-2">
                                             <span>Overall Progress:</span>
-                                            <span>{progress.completedPrompts} / {progress.totalPrompts} prompts</span>
+                                            <span>
+                                                {progress.completedPrompts} / {progress.totalPrompts} prompts
+                                                {' '}({Math.round((progress.completedPrompts / progress.totalPrompts) * 100)}%)
+                                            </span>
                                         </div>
                                         <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
                                             <div
-                                                className="h-full bg-blue-600 transition-all duration-500"
+                                                className="h-full bg-blue-600 transition-all duration-500 ease-in-out"
                                                 style={{
                                                     width: `${(progress.completedPrompts / progress.totalPrompts) * 100}%`
                                                 }}
@@ -206,21 +235,32 @@ export default function Home() {
                                     </div>
                                     <div className="space-y-4">
                                         {Object.entries(progress.modelProgress).map(([model, stats]) => (
-                                            <div key={model}>
-                                                <div className="flex justify-between text-sm mb-1">
+                                            <div key={model} className="space-y-2">
+                                                <div className="flex justify-between text-sm">
                                                     <span>{model}:</span>
                                                     <span>
-                                                        {stats.completed} / {stats.total} 
+                                                        {stats.completed} / {stats.total} prompts
                                                         {stats.failed > 0 && ` (${stats.failed} failed)`}
+                                                        {' '}({Math.round(((stats.completed + stats.failed) / stats.total) * 100)}%)
                                                     </span>
                                                 </div>
                                                 <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                                                    <div
-                                                        className="h-full bg-blue-600 transition-all duration-500"
-                                                        style={{
-                                                            width: `${(stats.completed / stats.total) * 100}%`
-                                                        }}
-                                                    />
+                                                    <div className="flex h-full">
+                                                        <div
+                                                            className="h-full bg-blue-600 transition-all duration-500 ease-in-out"
+                                                            style={{
+                                                                width: `${(stats.completed / stats.total) * 100}%`
+                                                            }}
+                                                        />
+                                                        {stats.failed > 0 && (
+                                                            <div
+                                                                className="h-full bg-red-500 transition-all duration-500 ease-in-out"
+                                                                style={{
+                                                                    width: `${(stats.failed / stats.total) * 100}%`
+                                                                }}
+                                                            />
+                                                        )}
+                                                    </div>
                                                 </div>
                                             </div>
                                         ))}

@@ -18,10 +18,16 @@ import { GroupedBarGraph } from './graphs/GroupedBarGraph';
 import { RadarGraph } from './graphs/RadarGraph';
 import { BoxPlotGraph } from './graphs/BoxPlotGraph';
 import { HistogramGraph } from './graphs/HistogramGraph';
+import { ResponseModal } from './ResponseModal';
 import { v4 as uuidv4 } from 'uuid';
 
 interface ResultsVisualizationProps {
     data: AnalysisData;
+}
+
+interface SortConfig {
+    column: string;
+    direction: 'asc' | 'desc';
 }
 
 const AddChartModal: React.FC<{
@@ -92,6 +98,9 @@ const AddChartModal: React.FC<{
 export const ResultsVisualization: React.FC<ResultsVisualizationProps> = ({ data }) => {
     const { categorical, numerical } = getAvailableAxes(data);
     const [showAddModal, setShowAddModal] = useState(false);
+    const [selectedResponse, setSelectedResponse] = useState<string | null>(null);
+    const [sortConfig, setSortConfig] = useState<SortConfig | null>(null);
+    const [showRawResults, setShowRawResults] = useState(true);
     const [graphs, setGraphs] = useState<GraphConfig[]>(() => {
         // Start with a default bar graph
         const baseConfig = DEFAULT_GRAPH_CONFIGS.bar;
@@ -105,6 +114,55 @@ export const ResultsVisualization: React.FC<ResultsVisualizationProps> = ({ data
             }
         }];
     });
+
+    const handleSort = (column: string) => {
+        setSortConfig(current => {
+            if (current?.column === column) {
+                return {
+                    column,
+                    direction: current.direction === 'asc' ? 'desc' : 'asc'
+                };
+            }
+            return {
+                column,
+                direction: 'asc'
+            };
+        });
+    };
+
+    const sortedResults = React.useMemo(() => {
+        if (!sortConfig) return data.results;
+
+        return [...data.results].sort((a, b) => {
+            let aValue: any;
+            let bValue: any;
+
+            if (sortConfig.column === 'model') {
+                aValue = a.llmResponse.model.name;
+                bValue = b.llmResponse.model.name;
+            } else if (sortConfig.column === 'promptId') {
+                aValue = a.promptVariableIndex;
+                bValue = b.promptVariableIndex;
+            } else if (sortConfig.column === 'response') {
+                aValue = a.llmResponse.response;
+                bValue = b.llmResponse.response;
+            } else if (data.config.responseAttributes.some(attr => attr.name === sortConfig.column)) {
+                aValue = a.attributes[sortConfig.column];
+                bValue = b.attributes[sortConfig.column];
+            } else {
+                aValue = a.categories[sortConfig.column] || 'default';
+                bValue = b.categories[sortConfig.column] || 'default';
+            }
+
+            if (aValue === bValue) return 0;
+
+            const compareResult = typeof aValue === 'number' && typeof bValue === 'number'
+                ? aValue - bValue
+                : String(aValue).localeCompare(String(bValue));
+
+            return sortConfig.direction === 'asc' ? compareResult : -compareResult;
+        });
+    }, [data.results, sortConfig]);
 
     const addGraph = (type: GraphType) => {
         const baseConfig = DEFAULT_GRAPH_CONFIGS[type];
@@ -186,6 +244,60 @@ export const ResultsVisualization: React.FC<ResultsVisualizationProps> = ({ data
         setGraphs(graphs.filter(g => g.id !== id));
     };
 
+    const generateCSV = (data: AnalysisData): string => {
+        // Header row
+        const headers = [
+            'Model',
+            'Prompt ID',
+            ...data.config.promptCategories.map(cat => cat.name),
+            ...data.config.responseAttributes.map(attr => attr.name)
+        ];
+        
+        // Data rows
+        const rows = data.results.map(result => [
+            result.llmResponse.model.name,
+            (result.promptVariableIndex + 1).toString(),
+            ...data.config.promptCategories.map(category => 
+                result.categories[category.name] || 'default'
+            ),
+            ...data.config.responseAttributes.map(attr => {
+                const value = result.attributes[attr.name];
+                return typeof value === 'number' ? value.toFixed(3) : value;
+            })
+        ]);
+
+        // Combine headers and rows
+        return [
+            headers.join(','),
+            ...rows.map(row => row.join(','))
+        ].join('\n');
+    };
+
+    const generateJSON = (data: AnalysisData) => {
+        const experimentConfig = {
+            name: data.config.name,
+            description: data.config.description,
+            models: data.config.models.map(model => ({
+                name: model.name,
+                provider: model.provider
+            })),
+            promptCategories: data.config.promptCategories.map(category => ({
+                name: category.name,
+                categories: category.categories.map(cat => ({
+                    name: cat.name,
+                    prompt: cat.prompt
+                }))
+            })),
+            promptVariables: data.config.promptVariables,
+            responseAttributes: data.config.responseAttributes
+        };
+
+        return {
+            config: experimentConfig,
+            results: data.results
+        };
+    };
+
     return (
         <div className="space-y-6">
             <div className="flex justify-between items-center">
@@ -240,61 +352,178 @@ export const ResultsVisualization: React.FC<ResultsVisualizationProps> = ({ data
                 />
             )}
 
+            {selectedResponse && (
+                <ResponseModal
+                    response={selectedResponse}
+                    onClose={() => setSelectedResponse(null)}
+                />
+            )}
+
             <div className="mt-8">
-                <h3 className="text-lg font-semibold mb-4">Raw Results</h3>
-                <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-gray-50">
-                            <tr>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Model
-                                </th>
-                                {data.config.promptCategories.map(category => (
-                                    <th key={category.name} className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        {category.name}
+                <div 
+                    className="flex items-center justify-between mb-4 cursor-pointer hover:bg-gray-50 p-2 rounded"
+                    onClick={() => setShowRawResults(!showRawResults)}
+                >
+                    <h3 className="text-lg font-semibold">Raw Results</h3>
+                    <div className="flex items-center space-x-4">
+                        {showRawResults && (
+                            <div className="flex space-x-2">
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        const csvContent = generateCSV(data);
+                                        const blob = new Blob([csvContent], { type: 'text/csv' });
+                                        const url = window.URL.createObjectURL(blob);
+                                        const a = document.createElement('a');
+                                        a.href = url;
+                                        a.download = `${data.config.name || 'experiment'}_results.csv`;
+                                        document.body.appendChild(a);
+                                        a.click();
+                                        document.body.removeChild(a);
+                                        window.URL.revokeObjectURL(url);
+                                    }}
+                                    className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
+                                >
+                                    Download CSV
+                                </button>
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        const jsonContent = generateJSON(data);
+                                        const blob = new Blob([JSON.stringify(jsonContent, null, 2)], { type: 'application/json' });
+                                        const url = window.URL.createObjectURL(blob);
+                                        const a = document.createElement('a');
+                                        a.href = url;
+                                        a.download = `${data.config.name || 'experiment'}_full.json`;
+                                        document.body.appendChild(a);
+                                        a.click();
+                                        document.body.removeChild(a);
+                                        window.URL.revokeObjectURL(url);
+                                    }}
+                                    className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
+                                >
+                                    Download JSON
+                                </button>
+                            </div>
+                        )}
+                        <span className="text-gray-500 transform transition-transform duration-200" style={{ transform: showRawResults ? 'rotate(180deg)' : 'rotate(0deg)' }}>
+                            ▼
+                        </span>
+                    </div>
+                </div>
+                {showRawResults && (
+                    <div className="overflow-x-auto">
+                        <table className="min-w-full divide-y divide-gray-200">
+                            <thead className="bg-gray-50">
+                                <tr>
+                                    <th 
+                                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                                        onClick={() => handleSort('model')}
+                                    >
+                                        <div className="flex items-center">
+                                            Model
+                                            {sortConfig?.column === 'model' && (
+                                                <span className="ml-1">
+                                                    {sortConfig.direction === 'asc' ? '▲' : '▼'}
+                                                </span>
+                                            )}
+                                        </div>
                                     </th>
-                                ))}
-                                {data.config.responseAttributes.map(attr => (
-                                    <th key={attr.name} className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        {attr.name.replace(/([A-Z])/g, ' $1').trim()}
+                                    <th 
+                                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                                        onClick={() => handleSort('promptId')}
+                                    >
+                                        <div className="flex items-center">
+                                            Prompt ID
+                                            {sortConfig?.column === 'promptId' && (
+                                                <span className="ml-1">
+                                                    {sortConfig.direction === 'asc' ? '▲' : '▼'}
+                                                </span>
+                                            )}
+                                        </div>
                                     </th>
-                                ))}
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Response
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody className="bg-white divide-y divide-gray-200">
-                            {data.results.map((result, index) => (
-                                <tr key={index}>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                        {result.llmResponse.model.name}
-                                    </td>
                                     {data.config.promptCategories.map(category => (
-                                        <td key={category.name} className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                            {result.categories[category.name] || 'default'}
-                                        </td>
+                                        <th 
+                                            key={category.name}
+                                            className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                                            onClick={() => handleSort(category.name)}
+                                        >
+                                            <div className="flex items-center">
+                                                {category.name}
+                                                {sortConfig?.column === category.name && (
+                                                    <span className="ml-1">
+                                                        {sortConfig.direction === 'asc' ? '▲' : '▼'}
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </th>
                                     ))}
                                     {data.config.responseAttributes.map(attr => (
-                                        <td key={attr.name} className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                            {typeof result.attributes[attr.name] === 'number' 
-                                                ? result.attributes[attr.name].toFixed(3)
-                                                : result.attributes[attr.name]}
-                                        </td>
-                                    ))}
-                                    <td className="px-6 py-4 text-sm text-gray-900 max-w-md truncate">
-                                        <button
-                                            onClick={() => alert(result.llmResponse.response)}
-                                            className="text-blue-600 hover:text-blue-800"
+                                        <th 
+                                            key={attr.name}
+                                            className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                                            onClick={() => handleSort(attr.name)}
                                         >
-                                            View Response
-                                        </button>
-                                    </td>
+                                            <div className="flex items-center">
+                                                {attr.name.replace(/([A-Z])/g, ' $1').trim()}
+                                                {sortConfig?.column === attr.name && (
+                                                    <span className="ml-1">
+                                                        {sortConfig.direction === 'asc' ? '▲' : '▼'}
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </th>
+                                    ))}
+                                    <th 
+                                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                                        onClick={() => handleSort('response')}
+                                    >
+                                        <div className="flex items-center">
+                                            Response
+                                            {sortConfig?.column === 'response' && (
+                                                <span className="ml-1">
+                                                    {sortConfig.direction === 'asc' ? '▲' : '▼'}
+                                                </span>
+                                            )}
+                                        </div>
+                                    </th>
                                 </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
+                            </thead>
+                            <tbody className="bg-white divide-y divide-gray-200">
+                                {sortedResults.map((result, index) => (
+                                    <tr key={index}>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                            {result.llmResponse.model.name}
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                            {result.promptVariableIndex + 1}
+                                        </td>
+                                        {data.config.promptCategories.map(category => (
+                                            <td key={category.name} className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                {result.categories[category.name] || 'default'}
+                                            </td>
+                                        ))}
+                                        {data.config.responseAttributes.map(attr => (
+                                            <td key={attr.name} className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                {typeof result.attributes[attr.name] === 'number'
+                                                    ? (result.attributes[attr.name] as number).toFixed(3)
+                                                    : result.attributes[attr.name]}
+                                            </td>
+                                        ))}
+                                        <td className="px-6 py-4 text-sm text-gray-900 max-w-md truncate">
+                                            <button
+                                                onClick={() => setSelectedResponse(result.llmResponse.response)}
+                                                className="text-blue-600 hover:text-blue-800"
+                                            >
+                                                View Response
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
             </div>
         </div>
     );

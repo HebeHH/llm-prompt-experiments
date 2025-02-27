@@ -1,6 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { BaseLLMProvider } from './base';
-import { LLMModel, LLMResponse } from '../types/llm';
+import { LLMModel, LLMResponse } from '@/lib/types/llm';
 
 export class AnthropicProvider extends BaseLLMProvider {
     private client: Anthropic | null = null;

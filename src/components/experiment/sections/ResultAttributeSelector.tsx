@@ -1,6 +1,6 @@
 import React from 'react';
-import { ResponseAttribute } from '../../../lib/types/analysis';
-import { resultAttributes } from '../../../lib/constants/resultAttributes';
+import { ResponseAttribute } from '@/lib/types/analysis';
+import { resultAttributes } from '@/lib/constants/resultAttributes'
 
 interface ResultAttributeSelectorProps {
   selectedAttributes: ResponseAttribute[];

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { PromptCategory } from '../../../lib/types/analysis';
+import { PromptCategory } from '@/lib/types/analysis';
 
 interface PromptCategoryEditorProps {
   categories: PromptCategory[];

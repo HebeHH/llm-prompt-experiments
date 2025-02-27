@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { defaultQuestions } from '../../../lib/constants/defaultQuestions';
+import { defaultQuestions } from '@/lib/constants/defaultQuestions';
 
 interface PromptVariableEditorProps {
   variables: string[];

@@ -1,9 +1,10 @@
-import { ResponseAttribute } from '../types/analysis';
+import { ResponseAttribute } from '@/lib/types/analysis';
 
 export const resultAttributes: ResponseAttribute[] = [
   {
     name: 'Word Count',
     description: 'Counts the number of words in the response',
+    dataType: 'numerical',
     function: (response: string) => {
       const words = response.match(/\b\w+\b/g);
       return words ? words.length : 0;
@@ -12,6 +13,7 @@ export const resultAttributes: ResponseAttribute[] = [
   {
     name: 'Emoji Count',
     description: 'Counts the number of emojis in the response',
+    dataType: 'numerical',
     function: (response: string) => {
       const emojiRegex = /[\p{Emoji_Presentation}\p{Extended_Pictographic}]/gu;
       const matches = response.match(emojiRegex);
@@ -21,11 +23,13 @@ export const resultAttributes: ResponseAttribute[] = [
   {
     name: 'Character Count',
     description: 'Counts the total number of characters in the response',
+    dataType: 'numerical',
     function: (response: string) => response.length,
   },
   {
     name: 'Sentence Count',
     description: 'Counts the number of sentences in the response',
+    dataType: 'numerical',
     function: (response: string) => {
       const sentences = response.split(/[.!?]+/).filter(Boolean);
       return sentences.length;
@@ -34,6 +38,7 @@ export const resultAttributes: ResponseAttribute[] = [
   {
     name: 'Average Word Length',
     description: 'Calculates the average length of words in the response',
+    dataType: 'numerical',
     function: (response: string) => {
       const words = response.match(/\b\w+\b/g);
       if (!words || words.length === 0) return 0;
@@ -44,6 +49,7 @@ export const resultAttributes: ResponseAttribute[] = [
   {
     name: 'Unique Word Count',
     description: 'Counts the number of unique words in the response',
+    dataType: 'numerical',
     function: (response: string) => {
       const words = response.match(/\b\w+\b/g);
       if (!words) return 0;

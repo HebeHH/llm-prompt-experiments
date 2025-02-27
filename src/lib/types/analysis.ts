@@ -1,4 +1,4 @@
-import { LLMModel, LLMResponse } from './llm';
+import { LLMModel } from './llm';
 
 export interface PromptCategory {
     name: string;
@@ -11,7 +11,8 @@ export interface PromptCategory {
 export interface ResponseAttribute {
     name: string;
     description: string;
-    function: (response: string) => number;
+    dataType: 'numerical' | 'categorical';
+    function: (response: string) => number | string;
 }
 
 export interface AnalysisConfig {
@@ -25,13 +26,16 @@ export interface AnalysisConfig {
 }
 
 export interface AnalysisResult {
-    llmResponse: LLMResponse;
-    attributes: Record<string, number>;
+    llmResponse: {
+        model: LLMModel;
+        response: string;
+    };
     categories: Record<string, string>;
+    attributes: Record<string, number | string>;
+    promptVariableIndex: number;
 }
 
 export interface AnalysisData {
     config: AnalysisConfig;
     results: AnalysisResult[];
-    timestamp: number;
 } 

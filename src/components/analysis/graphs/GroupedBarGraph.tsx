@@ -57,7 +57,10 @@ export const GroupedBarGraph: React.FC<GraphProps> = (props) => {
                 groupedData[xKey][colorKey] = [];
             }
 
-            groupedData[xKey][colorKey].push(result.attributes[groupedConfig.yAxis.name]);
+            const value = result.attributes[groupedConfig.yAxis.name];
+            if (typeof value === 'number') {
+                groupedData[xKey][colorKey].push(value);
+            }
             colorCategories.add(colorKey);
         });
 

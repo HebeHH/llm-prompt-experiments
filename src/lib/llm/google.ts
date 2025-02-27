@@ -1,6 +1,6 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { BaseLLMProvider } from './base';
-import { LLMModel, LLMResponse } from '../types/llm';
+import { LLMModel, LLMResponse } from '@/lib/types/llm';
 
 export class GoogleProvider extends BaseLLMProvider {
     private client: GoogleGenerativeAI | null = null;

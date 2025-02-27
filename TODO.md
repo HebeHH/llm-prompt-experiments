@@ -1,4 +1,42 @@
+# TODO List
+
+✓ Automatically select all result attributes in 'Create Experiment' card
+✓ Improve View Response popup (create new component for it)
+✓ Sort Raw Results by each of the columns
+✓ Clicking 'Run Analysis' doesn't always hide the experiment panel
+✓ Fix API key handling in ExperimentCreator component
+
+Remaining tasks:
+- Make "Raw Results" section collapsible
+- Add download buttons for raw results (CSV, JSON)
+- Add prompt variable tracking and display (Prompt ID column in results table)
+- Update configuration modal to show numbered prompt variables
+- Update analysis service to track prompt variable indices
+- Add progress tracking for analysis runs
+- Add retry mechanism for failed responses
+- Add error handling for API key validation
+- Add loading states for API calls
+- Add tooltips for configuration options
+- Add validation messages for all input fields
+- Add confirmation dialog for resetting configuration
+- Add ability to save and load configurations
+- Add ability to share configurations
+- Add ability to export results
+- Add ability to import results
+
 # TODOs
+
+
+### Next steps
+* ✅ Automatically select all result attributes in the 'Create Experiment' card.
+* ✅ The View Response popup should be displayed nicer. Make a new component for it.
+* ✅ Ability to sort the Raw Results by each of the columns
+* ✅ Clicking "Run Analysis" doesn't always hide the experiment panel
+* ✅ The "Raw Results" section should be collapsible.
+* ✅ Download: Add download buttons to the raw results section. We want a download CSV button which will download a CSV of just the results without the response data and then we also want a download experiment JSON button which will give a result a JSON download that contains the experiment parameters so that's the models, the prompt categories and options, the prompt variables and with the prompt categories both the category name as well as the actual prompt itself and then the full results JSON including the actual response.
+* ✅ API keys: Add a section to the UI where the user can add their own API keys. Use the .env for apikeys if it's available, but otherwise require them from the user. Model's aren't selectable unless there's an API key for them (either from the .env or from the user) - they're greyed out otherwise. Please make sure to use the API keys in the .env file if they're available. 
+* ✅ Let's keep track of the prompt variables better. So prompt variables is an array and then for each prompt we send off as well as keeping track of the prompt category, lLm etc. We also want to keep track of the index of the prompt variable. And this should also be displayed in the raw results table as 'Prompt ID'. Also update the "Show configuration" modal to number the prompt variables.
+
 
 
 ### Recent notes
@@ -8,17 +46,10 @@
 
 
 ## UI Notes
-* Page is not scrollable when I want to see the Analysis progress
-* The View Response popup should be displayed nicer. Make a new component for it.
-* The "Raw Results" section should be collapsible.
-* Ability to sort the Raw Results by each of the columns
-* Use more interesting colors
-* Clicking "Run Analysis" doesn't always hide the experiment panel
 
-## Functionality Notes
-* Download: Add download buttons to the raw results section. We want a download CSV button which will download a CSV of just the results without the response data and then we also want a download experiment JSON button which will give a result a JSON download that contains the experiment parameters so that's the models, the prompt categories and options, the prompt variables and with the prompt categories both the category name as well as the actual prompt itself and then the full results JSON including the actual response.
-* API keys: Add a section to the UI where the user can add their own API keys. Use the .env for apikeys if it's available, but otherwise require them from the user. Model's aren't selectable unless there's an API key for them (either from the .env or from the user). Show an error message on hover
-* Let's keep track of the prompt variables better. So prompt variables is an array and then for each prompt we send off as well as keeping track of the prompt category, lLm etc. We also want to keep track of the index of the prompt variable. And this should also be displayed in the raw results table as 'Prompt ID'.
+
+* Use more interesting colors
+
 
 
 ## Broader Analysis Experiment Creation

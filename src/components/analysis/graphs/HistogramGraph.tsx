@@ -39,8 +39,12 @@ export const HistogramGraph: React.FC<GraphProps> = (props) => {
 
     const chartData = useMemo(() => {
         // Get all values for the y-axis
-        const allValues = data.results.map(r => r.attributes[histogramConfig.yAxis.name]);
+        const allValues = data.results
+            .map(r => r.attributes[histogramConfig.yAxis.name])
+            .filter((value): value is number => typeof value === 'number');
         
+        if (allValues.length === 0) return [];
+
         // Calculate bin size
         const min = Math.min(...allValues);
         const max = Math.max(...allValues);
@@ -72,6 +76,8 @@ export const HistogramGraph: React.FC<GraphProps> = (props) => {
         // Count values in bins
         data.results.forEach(result => {
             const value = result.attributes[histogramConfig.yAxis.name];
+            if (typeof value !== 'number') return;
+
             const binIndex = Math.floor((value - min) / binSize);
             const binStart = min + binIndex * binSize;
             

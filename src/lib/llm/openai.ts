@@ -1,6 +1,6 @@
 import OpenAI from 'openai';
 import { BaseLLMProvider } from './base';
-import { LLMModel, LLMResponse } from '../types/llm';
+import { LLMModel, LLMResponse } from '@/lib/types/llm';
 
 export class OpenAIProvider extends BaseLLMProvider {
     private client: OpenAI | null = null;

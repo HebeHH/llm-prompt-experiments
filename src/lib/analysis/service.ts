@@ -1,130 +1,180 @@
-import { AnalysisConfig, AnalysisData, AnalysisResult } from '../types/analysis';
-import { LLMProviderFactory } from '../llm/factory';
+import { AnalysisConfig, AnalysisData, AnalysisResult } from '@/lib/types/analysis';
+import { LLMProviderFactory } from '@/lib/llm/factory';
 
 export interface AnalysisProgress {
-    totalPrompts: number;
     completedPrompts: number;
+    totalPrompts: number;
     modelProgress: Record<string, {
-        total: number;
         completed: number;
         failed: number;
+        total: number;
     }>;
 }
 
 export class AnalysisService {
     private config: AnalysisConfig;
-    private results: AnalysisResult[] = [];
+    private onProgress?: (progress: AnalysisProgress) => void;
     private progress: AnalysisProgress;
-    private progressCallback?: (progress: AnalysisProgress) => void;
 
     constructor(config: AnalysisConfig, onProgress?: (progress: AnalysisProgress) => void) {
         this.config = config;
-        this.progressCallback = onProgress;
+        this.onProgress = onProgress;
         this.progress = {
-            totalPrompts: 0,
             completedPrompts: 0,
-            modelProgress: {},
+            totalPrompts: 0,
+            modelProgress: {}
         };
     }
 
-    async runAnalysis(): Promise<AnalysisData> {
-        const allPrompts = this.generatePrompts();
-        const results: AnalysisResult[] = [];
+    private initializeProgress() {
+        // Calculate total prompts: number of prompt variables * number of category combinations
+        const categoryOptionCombinations = this.calculateTotalCombinations();
+        const totalPromptsPerModel = this.config.promptVariables.length * categoryOptionCombinations;
+        const modelProgress: Record<string, { completed: number; failed: number; total: number }> = {};
 
-        // Initialize progress tracking
-        this.progress.totalPrompts = allPrompts.length * this.config.models.length;
-        this.progress.modelProgress = Object.fromEntries(
-            this.config.models.map(model => [
-                model.name,
-                { total: allPrompts.length, completed: 0, failed: 0 }
-            ])
-        );
-        this.updateProgress();
+        this.config.models.forEach(model => {
+            modelProgress[model.name] = {
+                completed: 0,
+                failed: 0,
+                total: totalPromptsPerModel
+            };
+        });
 
-        // Run prompts in parallel for each model
-        await Promise.all(this.config.models.map(async model => {
-            const provider = LLMProviderFactory.getProvider(model.provider);
+        this.progress = {
+            completedPrompts: 0,
+            totalPrompts: this.config.models.length * totalPromptsPerModel,
+            modelProgress
+        };
+
+        if (this.onProgress) {
+            this.onProgress({ ...this.progress });
+        }
+    }
+
+    private updateProgress(modelName: string, success: boolean) {
+        if (this.progress.modelProgress[modelName]) {
+            if (success) {
+                this.progress.modelProgress[modelName].completed++;
+            } else {
+                this.progress.modelProgress[modelName].failed++;
+            }
+            this.progress.completedPrompts++;
+
+            // Create a new object to ensure React detects the change
+            const newProgress = {
+                ...this.progress,
+                modelProgress: {
+                    ...this.progress.modelProgress,
+                    [modelName]: { ...this.progress.modelProgress[modelName] }
+                }
+            };
+            this.progress = newProgress;
+
+            if (this.onProgress) {
+                this.onProgress(newProgress);
+            }
+        }
+    }
+
+    private calculateTotalCombinations(): number {
+        return this.config.promptCategories.reduce((total, category) => {
+            return total * category.categories.length;
+        }, 1);
+    }
+
+    private generateCategoryCombinations() {
+        const categories = this.config.promptCategories;
+        if (categories.length === 0) return [[]];
+
+        const combinations: Array<Array<{ categoryName: string; option: { name: string; prompt: string } }>> = [[]];
+        
+        categories.forEach(category => {
+            const newCombinations: Array<Array<{ categoryName: string; option: { name: string; prompt: string } }>> = [];
             
-            for (const prompt of allPrompts) {
-                try {
-                    const llmResponse = await provider.generateResponse(model, prompt.prompt);
-                    
-                    // Calculate response attributes
-                    const attributes: Record<string, number> = {};
-                    for (const attr of this.config.responseAttributes) {
-                        attributes[attr.name] = attr.function(llmResponse.response);
+            combinations.forEach(combination => {
+                category.categories.forEach(option => {
+                    newCombinations.push([
+                        ...combination,
+                        { categoryName: category.name, option }
+                    ]);
+                });
+            });
+            
+            combinations.length = 0;
+            combinations.push(...newCombinations);
+        });
+
+        return combinations;
+    }
+
+    public async runAnalysis(): Promise<AnalysisData> {
+        this.initializeProgress();
+        const results: AnalysisResult[] = [];
+        const retryLimit = 3;
+        const categoryCombinations = this.generateCategoryCombinations();
+
+        // Process all models in parallel, but keep each model's prompts sequential
+        await Promise.all(this.config.models.map(async (model) => {
+            const llm = LLMProviderFactory.getProvider(model.provider);
+
+            for (let promptIdx = 0; promptIdx < this.config.promptVariables.length; promptIdx++) {
+                const promptVariable = this.config.promptVariables[promptIdx];
+
+                // Process each category combination
+                for (const combination of categoryCombinations) {
+                    let retryCount = 0;
+                    let success = false;
+
+                    while (retryCount < retryLimit && !success) {
+                        try {
+                            // Get prompts from the current combination
+                            const categoryPrompts = combination.map(c => c.option.prompt);
+
+                            // Create the full prompt
+                            const prompt = this.config.promptFunction(categoryPrompts, promptVariable);
+
+                            // Get the response
+                            const llmResponse = await llm.generateResponse(model, prompt);
+
+                            // Create the result object
+                            const result: AnalysisResult = {
+                                llmResponse: {
+                                    model: model,
+                                    response: llmResponse.response
+                                },
+                                categories: {},
+                                attributes: {},
+                                promptVariableIndex: promptIdx
+                            };
+
+                            // Add category information
+                            combination.forEach(({ categoryName, option }) => {
+                                result.categories[categoryName] = option.name;
+                            });
+
+                            // Calculate attributes
+                            this.config.responseAttributes.forEach(attr => {
+                                result.attributes[attr.name] = attr.function(llmResponse.response);
+                            });
+
+                            results.push(result);
+                            success = true;
+                        } catch (error) {
+                            retryCount++;
+                            if (retryCount === retryLimit) {
+                                console.error(`Failed to get response after ${retryLimit} attempts for model ${model.name}`);
+                            }
+                        }
                     }
 
-                    results.push({
-                        llmResponse,
-                        attributes,
-                        categories: prompt.categories,
-                    });
-
-                    // Update progress
-                    this.progress.completedPrompts++;
-                    this.progress.modelProgress[model.name].completed++;
-                    this.updateProgress();
-                } catch (error) {
-                    console.error(`Error analyzing prompt for model ${model.name}:`, error);
-                    this.progress.modelProgress[model.name].failed++;
-                    this.updateProgress();
+                    this.updateProgress(model.name, success);
                 }
             }
         }));
 
-        this.results = results;
-
         return {
             config: this.config,
-            results: this.results,
-            timestamp: Date.now(),
+            results
         };
-    }
-
-    private updateProgress() {
-        if (this.progressCallback) {
-            this.progressCallback({ ...this.progress });
-        }
-    }
-
-    private generatePrompts(): Array<{ prompt: string; categories: Record<string, string> }> {
-        const prompts: Array<{ prompt: string; categories: Record<string, string> }> = [];
-
-        // Generate all possible combinations of categories
-        const categoryNames = this.config.promptCategories.map(cat => cat.name);
-        const categoryValues = this.config.promptCategories.map(cat => 
-            cat.categories.map(c => ({ name: c.name, prompt: c.prompt }))
-        );
-
-        const generateCombinations = (
-            current: { name: string; prompt: string }[],
-            index: number
-        ) => {
-            if (index === categoryNames.length) {
-                // For each combination, generate prompts with all variables
-                for (const variable of this.config.promptVariables) {
-                    const categoryPrompts = current.map(c => c.prompt);
-                    const prompt = this.config.promptFunction(categoryPrompts, variable);
-                    const categories = Object.fromEntries(
-                        current.map((c, i) => [categoryNames[i], c.name])
-                    );
-
-                    prompts.push({ prompt, categories });
-                }
-                return;
-            }
-
-            for (const value of categoryValues[index]) {
-                generateCombinations([...current, value], index + 1);
-            }
-        };
-
-        generateCombinations([], 0);
-        return prompts;
-    }
-
-    getResults(): AnalysisResult[] {
-        return this.results;
     }
 } 

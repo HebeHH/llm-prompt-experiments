@@ -33,8 +33,13 @@ export const BarGraph: React.FC<GraphProps> = (props) => {
             if (!groupedData[key]) {
                 groupedData[key] = { total: 0, count: 0 };
             }
-            groupedData[key].total += result.attributes[barConfig.yAxis.name];
-            groupedData[key].count += 1;
+
+            const value = result.attributes[barConfig.yAxis.name];
+            // Only aggregate if the value is a number
+            if (typeof value === 'number') {
+                groupedData[key].total += value;
+                groupedData[key].count += 1;
+            }
         });
 
         return Object.entries(groupedData).map(([name, { total, count }]) => ({

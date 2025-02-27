@@ -1,4 +1,4 @@
-import { LLMConfig, LLMModel, LLMResponse } from '../types/llm';
+import { LLMConfig, LLMModel, LLMResponse } from '@/lib/types/llm';
 
 export interface LLMProvider {
     initialize(config: LLMConfig): void;

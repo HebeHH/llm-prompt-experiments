@@ -1,4 +1,4 @@
-import { LLMConfig, LLMProvider as LLMProviderType } from '../types/llm';
+import { LLMConfig, LLMProvider as LLMProviderType } from '@/lib/types/llm';
 import { LLMProvider } from './base';
 import { AnthropicProvider } from './anthropic';
 import { GoogleProvider } from './google';

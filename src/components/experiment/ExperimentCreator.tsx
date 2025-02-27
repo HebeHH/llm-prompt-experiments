@@ -1,44 +1,64 @@
-import React, { useState, useMemo } from 'react';
-import { AnalysisConfig, PromptCategory, ResponseAttribute } from '../../lib/types/analysis';
-import { LLMModel } from '../../lib/types/llm';
-import { ModelSelector } from './sections/ModelSelector';
-import { PromptCategoryEditor } from './sections/PromptCategoryEditor';
-import { PromptVariableEditor } from './sections/PromptVariableEditor';
-import { ResultAttributeSelector } from './sections/ResultAttributeSelector';
-import { PricingPredictor } from './sections/PricingPredictor';
+import React, { useState, useMemo, useCallback } from 'react';
+import { AnalysisConfig, PromptCategory, ResponseAttribute } from '@/lib/types/analysis';
+import { LLMModel, LLMProvider } from '@/lib/types/llm';
+import { ModelSelector } from '@/components/experiment/sections/ModelSelector';
+import { PromptCategoryEditor } from '@/components/experiment/sections/PromptCategoryEditor';
+import { PromptVariableEditor } from '@/components/experiment/sections/PromptVariableEditor';
+import { ResultAttributeSelector } from '@/components/experiment/sections/ResultAttributeSelector';
+import { PricingPredictor } from '@/components/experiment/sections/PricingPredictor';
+import { ApiKeyManager } from '@/components/experiment/sections/ApiKeyManager';
+import { resultAttributes } from '@/lib/constants/resultAttributes';
 
 interface ExperimentCreatorProps {
   onConfigChange: (config: AnalysisConfig) => void;
   onRunAnalysis: () => void;
   isRunning: boolean;
+  onApiKeysChange?: (keys: Record<LLMProvider, string>) => void;
 }
+
+const defaultApiKeys: Record<LLMProvider, string> = {
+  anthropic: process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY || '',
+  google: process.env.NEXT_PUBLIC_GOOGLE_API_KEY || '',
+  openai: process.env.NEXT_PUBLIC_OPENAI_API_KEY || ''
+};
 
 export const ExperimentCreator: React.FC<ExperimentCreatorProps> = ({
   onConfigChange,
   onRunAnalysis,
   isRunning,
+  onApiKeysChange
 }) => {
   const [config, setConfig] = useState<AnalysisConfig>({
-    name: 'New Experiment',
-    description: 'A new experiment configuration',
+    name: '',
+    description: '',
     models: [],
     promptCategories: [],
     promptVariables: [],
-    responseAttributes: [],
+    responseAttributes: [...resultAttributes],
     promptFunction: (categories: string[], variable: string) => {
       return `${categories.join("\n")}\n${variable}`;
     },
   });
 
-  const handleConfigUpdate = (updates: Partial<AnalysisConfig>) => {
-    const newConfig = { ...config, ...updates };
+  const [apiKeys, setApiKeys] = useState<Record<LLMProvider, string>>(defaultApiKeys);
+
+  const handleConfigUpdate = useCallback((update: Partial<AnalysisConfig>) => {
+    const newConfig = { ...config, ...update };
     setConfig(newConfig);
     onConfigChange(newConfig);
-  };
+  }, [config, onConfigChange]);
+
+  const handleApiKeysUpdate = useCallback((keys: Record<LLMProvider, string>) => {
+    setApiKeys(keys);
+    if (onApiKeysChange) {
+      onApiKeysChange(keys);
+    }
+  }, [onApiKeysChange]);
 
   const isValidConfig = useMemo(() => {
-    // Must have at least one model
+    // Must have at least one model with an available API key
     if (config.models.length === 0) return false;
+    if (!config.models.some(model => !!apiKeys[model.provider])) return false;
 
     // Must have at least one prompt variable
     if (config.promptVariables.length === 0) return false;
@@ -53,10 +73,11 @@ export const ExperimentCreator: React.FC<ExperimentCreatorProps> = ({
     if (config.responseAttributes.length === 0) return false;
 
     return true;
-  }, [config]);
+  }, [config, apiKeys]);
 
   const getValidationMessage = () => {
     if (config.models.length === 0) return "Select at least one model";
+    if (!config.models.some(model => !!apiKeys[model.provider])) return "Selected models require API keys";
     if (config.promptVariables.length === 0) return "Add at least one prompt variable";
     if (config.promptCategories.length === 0) return "Add at least one prompt category";
     if (config.promptCategories.some(cat => cat.categories.length === 0)) {
@@ -86,24 +107,30 @@ export const ExperimentCreator: React.FC<ExperimentCreatorProps> = ({
       </div>
 
       <div className="space-y-6">
+        <ApiKeyManager
+          onApiKeysChange={handleApiKeysUpdate}
+          initialApiKeys={defaultApiKeys}
+        />
+
         <ModelSelector
           selectedModels={config.models}
-          onChange={(models) => handleConfigUpdate({ models })}
+          onChange={(models: LLMModel[]) => handleConfigUpdate({ models })}
+          availableApiKeys={apiKeys}
         />
 
         <PromptCategoryEditor
           categories={config.promptCategories}
-          onChange={(promptCategories) => handleConfigUpdate({ promptCategories })}
+          onChange={(promptCategories: PromptCategory[]) => handleConfigUpdate({ promptCategories })}
         />
 
         <PromptVariableEditor
           variables={config.promptVariables}
-          onChange={(promptVariables) => handleConfigUpdate({ promptVariables })}
+          onChange={(promptVariables: string[]) => handleConfigUpdate({ promptVariables })}
         />
 
         <ResultAttributeSelector
           selectedAttributes={config.responseAttributes}
-          onChange={(responseAttributes) => handleConfigUpdate({ responseAttributes })}
+          onChange={(responseAttributes: ResponseAttribute[]) => handleConfigUpdate({ responseAttributes })}
         />
 
         <PricingPredictor
@@ -112,26 +139,24 @@ export const ExperimentCreator: React.FC<ExperimentCreatorProps> = ({
           promptVariables={config.promptVariables}
         />
 
-        <div>
+        <div className="flex justify-between items-center">
+          {!isValidConfig && (
+            <p className="text-sm text-red-600">{getValidationMessage()}</p>
+          )}
+          <div className="flex-grow" />
           <button
             onClick={onRunAnalysis}
-            disabled={isRunning || !isValidConfig}
-            className={`w-full py-3 px-6 rounded-lg text-white font-semibold ${
-              isRunning
+            disabled={!isValidConfig || isRunning}
+            className={`px-6 py-2 rounded-lg text-white ${
+              !isValidConfig || isRunning
                 ? 'bg-gray-400 cursor-not-allowed'
-                : isValidConfig
-                ? 'bg-blue-600 hover:bg-blue-700'
-                : 'bg-gray-400 cursor-not-allowed'
+                : 'bg-blue-600 hover:bg-blue-700'
             }`}
-            title={!isValidConfig ? getValidationMessage() : undefined}
           >
             {isRunning ? 'Running Analysis...' : 'Run Analysis'}
           </button>
-          {!isValidConfig && (
-            <p className="mt-2 text-sm text-red-600">{getValidationMessage()}</p>
-          )}
         </div>
       </div>
     </div>
   );
-}; 
+};

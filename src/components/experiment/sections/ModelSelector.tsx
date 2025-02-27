@@ -1,15 +1,17 @@
 import React, { useState } from 'react';
-import { LLMModel } from '../../../lib/types/llm';
-import { models } from '../../../lib/constants/models';
+import { LLMModel, LLMProvider } from '@/lib/types/llm';
+import { models } from '@/lib/constants/models';
 
 interface ModelSelectorProps {
   selectedModels: LLMModel[];
   onChange: (models: LLMModel[]) => void;
+  availableApiKeys?: Record<LLMProvider, string>;
 }
 
 export const ModelSelector: React.FC<ModelSelectorProps> = ({
   selectedModels,
   onChange,
+  availableApiKeys = {}
 }) => {
   const [filterProvider, setFilterProvider] = useState<string>('all');
   const [sortBy, setSortBy] = useState<'provider' | 'cost'>('provider');
@@ -32,11 +34,16 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
     selectedModels.some(m => m.name === model.name);
 
   const handleModelToggle = (model: LLMModel) => {
-    if (isModelSelected(model)) {
+    const isSelected = selectedModels.some(m => m.name === model.name);
+    if (isSelected) {
       onChange(selectedModels.filter(m => m.name !== model.name));
     } else {
       onChange([...selectedModels, model]);
     }
+  };
+
+  const isModelAvailable = (model: LLMModel) => {
+    return !!availableApiKeys[model.provider];
   };
 
   return (
@@ -67,34 +74,37 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {sortedModels.map(model => (
-          <div
-            key={model.name}
-            className={`p-4 rounded-lg border-2 transition-colors cursor-pointer ${
-              isModelSelected(model)
-                ? 'border-blue-500 bg-blue-50'
-                : 'border-gray-200 hover:border-blue-300'
-            }`}
-            onClick={() => handleModelToggle(model)}
-          >
-            <div className="flex items-start justify-between">
-              <div>
-                <h4 className="font-medium text-gray-900">{model.name}</h4>
-                <p className="text-sm text-gray-500 capitalize">{model.provider}</p>
+        {sortedModels.map(model => {
+          const isSelected = isModelSelected(model);
+          const isAvailable = isModelAvailable(model);
+
+          return (
+            <div
+              key={model.name}
+              className={`relative flex items-center p-4 border rounded-lg 
+                ${isSelected ? 'border-blue-500 bg-blue-50' : 'border-gray-200'} 
+                ${!isAvailable ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-50 cursor-pointer'}`}
+              onClick={() => isAvailable && handleModelToggle(model)}
+            >
+              <div className="flex-1">
+                <h4 className="font-medium">{model.name}</h4>
+                <p className="text-sm text-gray-500">{model.provider}</p>
               </div>
-              <input
-                type="checkbox"
-                checked={isModelSelected(model)}
-                onChange={() => handleModelToggle(model)}
-                className="h-5 w-5 text-blue-600"
-              />
+              {!isAvailable && (
+                <div className="absolute inset-0 flex items-center justify-center bg-gray-100 bg-opacity-50 rounded-lg">
+                  <span className="text-sm text-gray-500">API key required</span>
+                </div>
+              )}
+              {isSelected && (
+                <div className="absolute top-2 right-2">
+                  <svg className="h-5 w-5 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  </svg>
+                </div>
+              )}
             </div>
-            <div className="mt-2 text-sm text-gray-600">
-              <p>Input: ${model.pricing.perMillionTokensInput.toFixed(2)}/M tokens</p>
-              <p>Output: ${model.pricing.perMillionTokensOutput.toFixed(2)}/M tokens</p>
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

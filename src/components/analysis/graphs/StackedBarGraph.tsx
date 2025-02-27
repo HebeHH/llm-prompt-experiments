@@ -56,7 +56,10 @@ export const StackedBarGraph: React.FC<GraphProps> = (props) => {
                 groupedData[xKey][colorKey] = [];
             }
 
-            groupedData[xKey][colorKey].push(result.attributes[stackedConfig.yAxis.name]);
+            const value = result.attributes[stackedConfig.yAxis.name];
+            if (typeof value === 'number') {
+                groupedData[xKey][colorKey].push(value);
+            }
         });
 
         // Calculate averages and format data for the chart

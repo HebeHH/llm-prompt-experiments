@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
-import { LLMModel } from '../../../lib/types/llm';
-import { PromptCategory } from '../../../lib/types/analysis';
+import { LLMModel } from '@/lib/types/llm';
+import { PromptCategory } from '@/lib/types/analysis';
 
 interface PricingPredictorProps {
   models: LLMModel[];
