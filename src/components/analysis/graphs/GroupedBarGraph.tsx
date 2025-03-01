@@ -40,14 +40,14 @@ export const GroupedBarGraph: React.FC<GraphProps> = (props) => {
             if (groupedConfig.xAxis.name === 'model') {
                 xKey = result.llmResponse.model.name;
             } else {
-                xKey = result.factors[groupedConfig.xAxis.name] || 'default';
+                xKey = result.factors[groupedConfig.xAxis.name] || String(result.responseVariables[groupedConfig.xAxis.name]) || 'default';
             }
 
             let colorKey = '';
             if (groupedConfig.colorAxis.name === 'model') {
                 colorKey = result.llmResponse.model.name;
             } else {
-                colorKey = result.factors[groupedConfig.colorAxis.name] || 'default';
+                colorKey = result.factors[groupedConfig.colorAxis.name] || String(result.responseVariables[groupedConfig.colorAxis.name]) || 'default';
             }
 
             if (!groupedData[xKey]) {
@@ -85,7 +85,7 @@ export const GroupedBarGraph: React.FC<GraphProps> = (props) => {
             if (groupedConfig.colorAxis.name === 'model') {
                 colorKey = result.llmResponse.model.name;
             } else {
-                colorKey = result.factors[groupedConfig.colorAxis.name] || 'default';
+                colorKey = result.factors[groupedConfig.colorAxis.name] || String(result.responseVariables[groupedConfig.colorAxis.name]) || 'default';
             }
             categories.add(colorKey);
         });
@@ -121,7 +121,10 @@ export const GroupedBarGraph: React.FC<GraphProps> = (props) => {
                         }}
                     />
                     <Tooltip />
-                    <Legend />
+                    <Legend 
+                        verticalAlign="top"
+                        height={36}
+                    />
                     {colorCategories.map((category, index) => (
                         <Bar
                             key={category}

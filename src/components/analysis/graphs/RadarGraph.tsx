@@ -40,7 +40,7 @@ export const RadarGraph: React.FC<GraphProps> = (props) => {
             if (radarConfig.colorAxis.name === 'model') {
                 category = result.llmResponse.model.name;
             } else {
-                category = result.factors[radarConfig.colorAxis.name] || 'default';
+                category = result.factors[radarConfig.colorAxis.name] || String(result.responseVariables[radarConfig.colorAxis.name]) || 'default';
             }
 
             if (!groupedData[category]) {
@@ -92,7 +92,7 @@ export const RadarGraph: React.FC<GraphProps> = (props) => {
             if (radarConfig.colorAxis.name === 'model') {
                 category = result.llmResponse.model.name;
             } else {
-                category = result.factors[radarConfig.colorAxis.name] || 'default';
+                category = result.factors[radarConfig.colorAxis.name] || String(result.responseVariables[radarConfig.colorAxis.name]) || 'default';
             }
             cats.add(category);
         });
@@ -128,7 +128,10 @@ export const RadarGraph: React.FC<GraphProps> = (props) => {
                             );
                         }}
                     />
-                    <Legend />
+                    <Legend 
+                        verticalAlign="top"
+                        height={36}
+                    />
                     {categories.map((category, index) => (
                         <Radar
                             key={category}

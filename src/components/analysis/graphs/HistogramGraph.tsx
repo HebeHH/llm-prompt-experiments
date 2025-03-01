@@ -141,7 +141,10 @@ export const HistogramGraph: React.FC<GraphProps> = (props) => {
                             );
                         }}
                     />
-                    <Legend />
+                    <Legend 
+                        verticalAlign="top"
+                        height={36}
+                    />
                     {(histogramConfig.colorAxis?.name === 'model'
                         ? data.results.map(r => r.llmResponse.model.name)
                         : histogramConfig.colorAxis

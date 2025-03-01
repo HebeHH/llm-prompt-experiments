@@ -78,14 +78,21 @@ export const getAvailableAxes = (data: AnalysisData): { categorical: DataAxis[],
             type: 'categorical' as const,
             name: cat.name,
             label: cat.name.charAt(0).toUpperCase() + cat.name.slice(1)
+        })),
+        ...data.config.responseVariables.filter(attr => attr.dataType === 'categorical').map(attr => ({
+            type: attr.dataType,
+            name: attr.name,
+            label: attr.name.replace(/([A-Z])/g, ' $1').trim()
         }))
     ];
 
-    const numerical: DataAxis[] = data.config.responseVariables.map(attr => ({
-        type: 'numerical',
+    const numerical: DataAxis[] = data.config.responseVariables.filter(attr => attr.dataType === 'numerical').map(attr => ({
+        type: attr.dataType,
         name: attr.name,
         label: attr.name.replace(/([A-Z])/g, ' $1').trim()
     }));
+    console.log(numerical);
+    console.log(categorical);
 
     return { categorical, numerical };
 };

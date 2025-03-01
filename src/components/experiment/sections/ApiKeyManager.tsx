@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { LLMProvider } from '@/lib/types/llm';
 
+type ExtendedProvider = LLMProvider | 'jigsaw';
+
 interface ApiKeyManagerProps {
-    onApiKeysChange: (keys: Record<LLMProvider, string>) => void;
-    initialApiKeys?: Partial<Record<LLMProvider, string>>;
+    onApiKeysChange: (keys: Record<ExtendedProvider, string>) => void;
+    initialApiKeys?: Partial<Record<ExtendedProvider, string>>;
 }
 
 interface ApiKeyState {
@@ -11,11 +13,13 @@ interface ApiKeyState {
     isFromEnv: boolean;
 }
 
+type ApiKeyRecord = Record<ExtendedProvider, ApiKeyState>;
+
 export const ApiKeyManager: React.FC<ApiKeyManagerProps> = ({
     onApiKeysChange,
     initialApiKeys = {}
 }) => {
-    const [apiKeys, setApiKeys] = useState<Record<LLMProvider, ApiKeyState>>(() => ({
+    const [apiKeys, setApiKeys] = useState<ApiKeyRecord>(() => ({
         anthropic: {
             value: process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY || initialApiKeys?.anthropic || '',
             isFromEnv: !!process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY
@@ -31,10 +35,14 @@ export const ApiKeyManager: React.FC<ApiKeyManagerProps> = ({
         groq: {
             value: process.env.NEXT_PUBLIC_GROQ_API_KEY || initialApiKeys?.groq || '',
             isFromEnv: !!process.env.NEXT_PUBLIC_GROQ_API_KEY
+        },
+        jigsaw: {
+            value: process.env.NEXT_PUBLIC_JIGSAW_API_KEY || initialApiKeys?.jigsaw || '',
+            isFromEnv: !!process.env.NEXT_PUBLIC_JIGSAW_API_KEY
         }
     }));
 
-    const handleApiKeyChange = (provider: LLMProvider, value: string) => {
+    const handleApiKeyChange = (provider: ExtendedProvider, value: string) => {
         const newApiKeys = {
             ...apiKeys,
             [provider]: {
@@ -48,7 +56,7 @@ export const ApiKeyManager: React.FC<ApiKeyManagerProps> = ({
         const simpleKeys = Object.entries(newApiKeys).reduce((acc, [key, state]) => ({
             ...acc,
             [key]: state.value
-        }), {} as Record<LLMProvider, string>);
+        }), {} as Record<ExtendedProvider, string>);
         
         onApiKeysChange(simpleKeys);
     };
@@ -70,7 +78,7 @@ export const ApiKeyManager: React.FC<ApiKeyManagerProps> = ({
                         <input
                             type="password"
                             value={state.value}
-                            onChange={(e) => handleApiKeyChange(provider as LLMProvider, e.target.value)}
+                            onChange={(e) => handleApiKeyChange(provider as ExtendedProvider, e.target.value)}
                             disabled={state.isFromEnv}
                             placeholder={state.isFromEnv ? "API key set in environment" : `Enter ${provider} API key`}
                             className={`mt-1 block w-full rounded-md shadow-sm 

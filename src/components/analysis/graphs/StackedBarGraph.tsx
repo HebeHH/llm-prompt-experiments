@@ -39,14 +39,14 @@ export const StackedBarGraph: React.FC<GraphProps> = (props) => {
             if (stackedConfig.xAxis.name === 'model') {
                 xKey = result.llmResponse.model.name;
             } else {
-                xKey = result.factors[stackedConfig.xAxis.name] || 'default';
+                xKey = result.factors[stackedConfig.xAxis.name] || String(result.responseVariables[stackedConfig.xAxis.name]) || 'default';
             }
 
             let colorKey = '';
             if (stackedConfig.colorAxis.name === 'model') {
                 colorKey = result.llmResponse.model.name;
             } else {
-                colorKey = result.factors[stackedConfig.colorAxis.name] || 'default';
+                colorKey = result.factors[stackedConfig.colorAxis.name] || String(result.responseVariables[stackedConfig.colorAxis.name]) || 'default';
             }
 
             if (!groupedData[xKey]) {
@@ -82,7 +82,7 @@ export const StackedBarGraph: React.FC<GraphProps> = (props) => {
             if (stackedConfig.colorAxis.name === 'model') {
                 colorKey = result.llmResponse.model.name;
             } else {
-                colorKey = result.factors[stackedConfig.colorAxis.name] || 'default';
+                colorKey = result.factors[stackedConfig.colorAxis.name] || String(result.responseVariables[stackedConfig.colorAxis.name]) || 'default';
             }
             categories.add(colorKey);
         });
@@ -118,7 +118,7 @@ export const StackedBarGraph: React.FC<GraphProps> = (props) => {
                         }}
                     />
                     <Tooltip />
-                    <Legend />
+                    <Legend verticalAlign="top" height={36} />
                     {colorCategories.map((category, index) => (
                         <Bar
                             key={category}

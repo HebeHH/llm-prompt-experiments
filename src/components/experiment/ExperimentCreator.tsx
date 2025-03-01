@@ -4,31 +4,34 @@ import { LLMModel, LLMProvider } from '@/lib/types/llm';
 import { ModelSelector } from '@/components/experiment/sections/ModelSelector';
 import { PromptFactorEditor } from '@/components/experiment/sections/PromptFactorEditor';
 import { PromptVariableEditor } from '@/components/experiment/sections/PromptVariableEditor';
-import { ResultAttributeSelector } from '@/components/experiment/sections/ResultAttributeSelector';
+import ResultAttributeSelector from '@/components/experiment/sections/ResultAttributeSelector';
 import { PricingPredictor } from '@/components/experiment/sections/PricingPredictor';
 import { ApiKeyManager } from '@/components/experiment/sections/ApiKeyManager';
 import { resultAttributes } from '@/lib/constants/resultAttributes';
+
+type ExtendedProvider = LLMProvider | 'jigsaw';
 
 interface ExperimentCreatorProps {
   onConfigChange: (config: AnalysisConfig) => void;
   onRunAnalysis: () => void;
   isRunning: boolean;
-  onApiKeysChange?: (keys: Record<LLMProvider, string>) => void;
+  onApiKeysChange?: (keys: Record<ExtendedProvider, string>) => void;
 }
 
-const defaultApiKeys: Record<LLMProvider, string> = {
+const defaultApiKeys: Record<ExtendedProvider, string> = {
   anthropic: process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY || '',
   google: process.env.NEXT_PUBLIC_GOOGLE_API_KEY || '',
   openai: process.env.NEXT_PUBLIC_OPENAI_API_KEY || '',
-  groq: process.env.NEXT_PUBLIC_GROQ_API_KEY || ''
+  groq: process.env.NEXT_PUBLIC_GROQ_API_KEY || '',
+  jigsaw: process.env.NEXT_PUBLIC_JIGSAW_API_KEY || ''
 };
 
 type WizardStep = {
   id: string;
   title: string;
   component: React.FC<any>;
-  isValid: (config: AnalysisConfig, apiKeys: Record<LLMProvider, string>) => boolean;
-  validationMessage: (config: AnalysisConfig, apiKeys: Record<LLMProvider, string>) => string;
+  isValid: (config: AnalysisConfig, apiKeys: Record<ExtendedProvider, string>) => boolean;
+  validationMessage: (config: AnalysisConfig, apiKeys: Record<ExtendedProvider, string>) => string;
 };
 
 export const ExperimentCreator: React.FC<ExperimentCreatorProps> = ({
@@ -43,13 +46,13 @@ export const ExperimentCreator: React.FC<ExperimentCreatorProps> = ({
     models: [],
     promptFactors: [],
     promptCovariates: [],
-    responseVariables: [...resultAttributes],
+    responseVariables: [],
     promptFunction: (factors: string[], variable: string) => {
       return `${factors.join("\n")}\n${variable}`;
     },
   });
 
-  const [apiKeys, setApiKeys] = useState<Record<LLMProvider, string>>(defaultApiKeys);
+  const [apiKeys, setApiKeys] = useState<Record<ExtendedProvider, string>>(defaultApiKeys);
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
 
   const handleConfigUpdate = useCallback((update: Partial<AnalysisConfig>) => {
@@ -58,7 +61,7 @@ export const ExperimentCreator: React.FC<ExperimentCreatorProps> = ({
     onConfigChange(newConfig);
   }, [config, onConfigChange]);
 
-  const handleApiKeysUpdate = useCallback((keys: Record<LLMProvider, string>) => {
+  const handleApiKeysUpdate = useCallback((keys: Record<ExtendedProvider, string>) => {
     setApiKeys(keys);
     if (onApiKeysChange) {
       onApiKeysChange(keys);
@@ -127,6 +130,64 @@ export const ExperimentCreator: React.FC<ExperimentCreatorProps> = ({
   
   const canGoPrev = currentStepIndex > 0;
 
+  // Prepare props for each component
+  const getComponentProps = (stepId: string) => {
+    const baseProps = {
+      onChange: (value: any) => {
+        const updates: Partial<AnalysisConfig> = {};
+        if (stepId === 'models') updates.models = value;
+        if (stepId === 'factors') updates.promptFactors = value;
+        if (stepId === 'covariates') updates.promptCovariates = value;
+        if (stepId === 'response') updates.responseVariables = value;
+        handleConfigUpdate(updates);
+      },
+    };
+
+    // Add specific props for each component
+    switch (stepId) {
+      case 'setup':
+        return {
+          ...baseProps,
+          onApiKeysChange: handleApiKeysUpdate,
+          initialApiKeys: defaultApiKeys,
+        };
+      case 'models':
+        return {
+          ...baseProps,
+          selectedModels: config.models,
+          availableApiKeys: apiKeys,
+        };
+      case 'factors':
+        return {
+          ...baseProps,
+          factors: config.promptFactors,
+          promptCovariates: config.promptCovariates,
+          promptFunction: config.promptFunction,
+        };
+      case 'covariates':
+        return {
+          ...baseProps,
+          variables: config.promptCovariates,
+          promptFactors: config.promptFactors,
+          promptFunction: config.promptFunction,
+        };
+      case 'response':
+        return {
+          ...baseProps,
+          selectedAttributes: config.responseVariables,
+        };
+      case 'pricing':
+        return {
+          ...baseProps,
+          models: config.models,
+          promptFactors: config.promptFactors,
+          promptCovariates: config.promptCovariates,
+        };
+      default:
+        return baseProps;
+    }
+  };
+
   return (
     <div className="flex flex-col flex-1">
       {/* Header */}
@@ -149,12 +210,12 @@ export const ExperimentCreator: React.FC<ExperimentCreatorProps> = ({
 
       {/* Tabs */}
       <div className="px-6 border-b border-violet-200">
-        <div className="flex space-x-1">
+        <div className="flex space-x-1 overflow-x-auto hide-scrollbar">
           {steps.map((step, index) => (
             <button
               key={step.id}
               onClick={() => setCurrentStepIndex(index)}
-              className={`py-3 px-4 -mb-px relative ${
+              className={`py-3 px-4 -mb-px relative whitespace-nowrap ${
                 index === currentStepIndex
                   ? 'text-teal-600 font-medium'
                   : 'text-violet-600 hover:text-violet-800'
@@ -170,28 +231,12 @@ export const ExperimentCreator: React.FC<ExperimentCreatorProps> = ({
       </div>
 
       {/* Content Area */}
-      <div className="flex-1 overflow-y-auto p-6">
-        <div className="h-full">
-          {React.createElement(currentStep.component, {
-            selectedModels: config.models,
-            factors: config.promptFactors,
-            variables: config.promptCovariates,
-            selectedAttributes: config.responseVariables,
-            models: config.models,
-            promptFactors: config.promptFactors,
-            promptCovariates: config.promptCovariates,
-            onApiKeysChange: handleApiKeysUpdate,
-            initialApiKeys: defaultApiKeys,
-            onChange: (value: any) => {
-              const updates: Partial<AnalysisConfig> = {};
-              if (currentStep.id === 'models') updates.models = value;
-              if (currentStep.id === 'factors') updates.promptFactors = value;
-              if (currentStep.id === 'covariates') updates.promptCovariates = value;
-              if (currentStep.id === 'response') updates.responseVariables = value;
-              handleConfigUpdate(updates);
-            },
-            availableApiKeys: apiKeys
-          })}
+      <div className="flex-1 overflow-hidden p-6">
+        <div className="h-full overflow-hidden">
+          {React.createElement(
+            currentStep.component, 
+            getComponentProps(currentStep.id)
+          )}
         </div>
       </div>
 

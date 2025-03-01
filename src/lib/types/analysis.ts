@@ -8,11 +8,29 @@ export interface PromptFactor {
     }[];
 }
 
+export interface ResponseVariableConfig {
+    name: string;
+    description: string;
+}
+
+export interface WordOccurrenceConfig extends ResponseVariableConfig {
+    searchTerm: string;
+}
+
+export interface SentimentConfig extends ResponseVariableConfig {
+    apiKey: string;
+}
+
+export type ResponseVariableType = 'simple' | 'word-occurrence' | 'sentiment-api';
+
 export interface ResponseVariable {
     name: string;
     description: string;
+    type: ResponseVariableType;
     dataType: 'numerical' | 'categorical';
-    function: (response: string) => number | string;
+    config?: WordOccurrenceConfig | SentimentConfig;
+    function: (response: string, config?: any) => Promise<number | string> | number | string;
+    requiresApiCall?: boolean;
 }
 
 export interface AnalysisConfig {

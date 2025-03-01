@@ -27,7 +27,7 @@ export const BarGraph: React.FC<GraphProps> = (props) => {
             if (barConfig.xAxis.name === 'model') {
                 key = result.llmResponse.model.name;
             } else {
-                key = result.factors[barConfig.xAxis.name] || 'default';
+                key = result.factors[barConfig.xAxis.name] || String(result.responseVariables[barConfig.xAxis.name]) || 'default';
             }
 
             if (!groupedData[key]) {

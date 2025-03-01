@@ -8,6 +8,8 @@ import { LLMProviderFactory } from '@/lib/constants/llms';
 import { AnalysisData, AnalysisConfig } from '@/lib/types/analysis';
 import { LLMProvider } from '@/lib/types/llm';
 
+type ExtendedProvider = LLMProvider | 'jigsaw';
+
 interface ExperimentConfigViewProps {
     config: AnalysisConfig;
     onClose: () => void;
@@ -87,11 +89,12 @@ export default function Home() {
     const [showExperimentPanel, setShowExperimentPanel] = useState(false);
     const [showConfigView, setShowConfigView] = useState(false);
     const [isRunning, setIsRunning] = useState(false);
-    const [apiKeys, setApiKeys] = useState<Record<LLMProvider, string>>({
+    const [apiKeys, setApiKeys] = useState<Record<ExtendedProvider, string>>({
         anthropic: process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY || '',
         google: process.env.NEXT_PUBLIC_GOOGLE_API_KEY || '',
         openai: process.env.NEXT_PUBLIC_OPENAI_API_KEY || '',
-        groq: process.env.NEXT_PUBLIC_GROQ_API_KEY || ''
+        groq: process.env.NEXT_PUBLIC_GROQ_API_KEY || '',
+        jigsaw: process.env.NEXT_PUBLIC_JIGSAW_API_KEY || ''
     });
     const [config, setConfig] = useState<AnalysisConfig>({
         name: 'New Experiment',
@@ -129,7 +132,25 @@ export default function Home() {
                 groqApiKey: apiKeys.groq
             });
 
-            const analysisService = new AnalysisService(config, (progress) => {
+            // Create a copy of the config with the API keys
+            const configWithApiKeys = {
+                ...config,
+                responseVariables: config.responseVariables.map(variable => {
+                    if (variable.type === 'sentiment-api') {
+                        return {
+                            ...variable,
+                            config: {
+                                name: variable.name,
+                                description: variable.description,
+                                apiKey: apiKeys.jigsaw
+                            }
+                        };
+                    }
+                    return variable;
+                })
+            };
+
+            const analysisService = new AnalysisService(configWithApiKeys, (progress) => {
                 setProgress(progress);
             });
             const results = await analysisService.runAnalysis();
@@ -154,7 +175,7 @@ export default function Home() {
         setShowExperimentPanel(false);
     };
 
-    const handleApiKeysChange = (keys: Record<LLMProvider, string>) => {
+    const handleApiKeysChange = (keys: Record<ExtendedProvider, string>) => {
         setApiKeys(keys);
     };
 
@@ -163,7 +184,7 @@ export default function Home() {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex justify-between items-center mb-8">
                     <h1 className="text-3xl font-bold text-white">
-                        AI Response Analysis Dashboard
+                        s<span className="text-violet-300">hebe</span>testing
                     </h1>
                     {currentView === 'results' && (
                         <div className="flex gap-4">
@@ -216,53 +237,84 @@ export default function Home() {
                             <div className="p-6">
                                 <div className="mb-6">
                                     <div className="flex justify-between text-sm font-medium mb-2">
-                                        <span>Overall Progress:</span>
-                                        <span>
-                                            {progress.completedPrompts} / {progress.totalPrompts} prompts
-                                            {' '}({Math.round((progress.completedPrompts / progress.totalPrompts) * 100)}%)
+                                        <span>Stage:</span>
+                                        <span className="capitalize">
+                                            {progress.stage === 'llm-responses' ? 'Getting LLM Responses' : 'Calculating Result Variables'}
                                         </span>
                                     </div>
-                                    <div className="h-3 bg-violet-100 rounded-full overflow-hidden">
-                                        <div
-                                            className="h-full bg-teal-500 transition-all duration-500 ease-in-out"
-                                            style={{
-                                                width: `${(progress.completedPrompts / progress.totalPrompts) * 100}%`
-                                            }}
-                                        />
-                                    </div>
-                                </div>
-                                <div className="space-y-4">
-                                    {Object.entries(progress.modelProgress).map(([model, stats]) => (
-                                        <div key={model} className="space-y-2">
-                                            <div className="flex justify-between text-sm font-medium">
-                                                <span>{model}:</span>
+                                    {progress.stage === 'llm-responses' && (
+                                        <>
+                                            <div className="flex justify-between text-sm font-medium mb-2">
+                                                <span>Overall Progress:</span>
                                                 <span>
-                                                    {stats.completed} / {stats.total} prompts
-                                                    {stats.failed > 0 && ` (${stats.failed} failed)`}
-                                                    {' '}({Math.round(((stats.completed + stats.failed) / stats.total) * 100)}%)
+                                                    {progress.completedPrompts} / {progress.totalPrompts} prompts
+                                                    {' '}({Math.round((progress.completedPrompts / progress.totalPrompts) * 100)}%)
                                                 </span>
                                             </div>
-                                            <div className="h-2 bg-violet-100 rounded-full overflow-hidden">
-                                                <div className="flex h-full">
-                                                    <div
-                                                        className="h-full bg-teal-500 transition-all duration-500 ease-in-out"
-                                                        style={{
-                                                            width: `${(stats.completed / stats.total) * 100}%`
-                                                        }}
-                                                    />
-                                                    {stats.failed > 0 && (
+                                            <div className="h-3 bg-violet-100 rounded-full overflow-hidden">
+                                                <div
+                                                    className="h-full bg-teal-500 transition-all duration-500 ease-in-out"
+                                                    style={{
+                                                        width: `${(progress.completedPrompts / progress.totalPrompts) * 100}%`
+                                                    }}
+                                                />
+                                            </div>
+                                        </>
+                                    )}
+                                    {progress.stage === 'result-variables' && progress.resultVariablesProgress && (
+                                        <>
+                                            <div className="flex justify-between text-sm font-medium mb-2">
+                                                <span>Result Variables Progress:</span>
+                                                <span>
+                                                    {progress.resultVariablesProgress.completed} / {progress.resultVariablesProgress.total} calculations
+                                                    {' '}({Math.round((progress.resultVariablesProgress.completed / progress.resultVariablesProgress.total) * 100)}%)
+                                                </span>
+                                            </div>
+                                            <div className="h-3 bg-violet-100 rounded-full overflow-hidden">
+                                                <div
+                                                    className="h-full bg-teal-500 transition-all duration-500 ease-in-out"
+                                                    style={{
+                                                        width: `${(progress.resultVariablesProgress.completed / progress.resultVariablesProgress.total) * 100}%`
+                                                    }}
+                                                />
+                                            </div>
+                                        </>
+                                    )}
+                                </div>
+                                {progress.stage === 'llm-responses' && (
+                                    <div className="space-y-4">
+                                        {Object.entries(progress.modelProgress).map(([model, stats]) => (
+                                            <div key={model} className="space-y-2">
+                                                <div className="flex justify-between text-sm font-medium">
+                                                    <span>{model}:</span>
+                                                    <span>
+                                                        {stats.completed} / {stats.total} prompts
+                                                        {stats.failed > 0 && ` (${stats.failed} failed)`}
+                                                        {' '}({Math.round(((stats.completed + stats.failed) / stats.total) * 100)}%)
+                                                    </span>
+                                                </div>
+                                                <div className="h-2 bg-violet-100 rounded-full overflow-hidden">
+                                                    <div className="flex h-full">
                                                         <div
-                                                            className="h-full bg-red-500 transition-all duration-500 ease-in-out"
+                                                            className="h-full bg-teal-500 transition-all duration-500 ease-in-out"
                                                             style={{
-                                                                width: `${(stats.failed / stats.total) * 100}%`
+                                                                width: `${(stats.completed / stats.total) * 100}%`
                                                             }}
                                                         />
-                                                    )}
+                                                        {stats.failed > 0 && (
+                                                            <div
+                                                                className="h-full bg-red-500 transition-all duration-500 ease-in-out"
+                                                                style={{
+                                                                    width: `${(stats.failed / stats.total) * 100}%`
+                                                                }}
+                                                            />
+                                                        )}
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                    ))}
-                                </div>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
                         </div>
                     )}
