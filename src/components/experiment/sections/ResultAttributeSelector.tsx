@@ -1,32 +1,133 @@
-import React from 'react';
-import { ResponseVariable } from '@/lib/types/analysis';
-import { resultAttributes } from '@/lib/constants/resultAttributes'
+import { ResponseVariable, ResponseVariableType } from '@/lib/types/analysis';
+import { resultAttributes } from '@/lib/constants/resultAttributes';
+import { useEffect, useState } from 'react';
 
 interface ResultAttributeSelectorProps {
   selectedAttributes: ResponseVariable[];
   onChange: (attributes: ResponseVariable[]) => void;
 }
 
-export const ResultAttributeSelector: React.FC<ResultAttributeSelectorProps> = ({
-  selectedAttributes,
-  onChange,
-}) => {
-  const isAttributeSelected = (attribute: ResponseVariable) =>
-    selectedAttributes.some(a => a.name === attribute.name);
+interface AttributeConfigModalProps {
+  attribute: ResponseVariable;
+  onSave: (attribute: ResponseVariable, config: any) => void;
+  onCancel: () => void;
+}
 
-  const handleAttributeToggle = (attribute: ResponseVariable) => {
-    if (isAttributeSelected(attribute)) {
-      onChange(selectedAttributes.filter(a => a.name !== attribute.name));
+// Only select Word Count by default
+const DEFAULT_SELECTED_ATTRIBUTES = ['Word Count'];
+
+function AttributeConfigModal({ attribute, onSave, onCancel }: AttributeConfigModalProps) {
+  const [config, setConfig] = useState<any>({});
+
+  const handleSave = () => {
+    if (attribute.type === 'sentiment-api') {
+      // For sentiment analysis, use the API key from environment
+      onSave(attribute, { apiKey: process.env.NEXT_PUBLIC_JIGSAW_API_KEY });
     } else {
-      onChange([...selectedAttributes, attribute]);
+      onSave(attribute, config);
     }
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold">Result Attributes</h3>
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white p-6 rounded-lg shadow-xl max-w-md w-full">
+        <h3 className="text-lg font-semibold mb-4">Configure {attribute.name}</h3>
+        
+        {attribute.type === 'word-occurrence' && (
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700">Search Term</label>
+            <input
+              type="text"
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              value={config.searchTerm || ''}
+              onChange={(e) => setConfig({ ...config, searchTerm: e.target.value })}
+              placeholder="Enter word or phrase to search for"
+            />
+          </div>
+        )}
+
+        <div className="mt-6 flex justify-end space-x-3">
+          <button
+            onClick={onCancel}
+            className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleSave}
+            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+          >
+            Save
+          </button>
+        </div>
       </div>
+    </div>
+  );
+}
+
+export const ResultAttributeSelector = ({
+  selectedAttributes,
+  onChange,
+}: ResultAttributeSelectorProps) => {
+  const [configuring, setConfiguring] = useState<ResponseVariable | null>(null);
+
+  useEffect(() => {
+    // Set default attributes when component mounts and no attributes are selected
+    if (selectedAttributes.length === 0) {
+      const defaultAttributes = resultAttributes.filter(attr => 
+        DEFAULT_SELECTED_ATTRIBUTES.includes(attr.name)
+      );
+      onChange(defaultAttributes);
+    }
+  }, [selectedAttributes.length, onChange]);
+
+  const isAttributeSelected = (attribute: ResponseVariable) => {
+    return selectedAttributes.some(a => a.name === attribute.name);
+  };
+
+  const handleAttributeToggle = (attribute: ResponseVariable) => {
+    if (isAttributeSelected(attribute)) {
+      onChange(selectedAttributes.filter(a => a.name !== attribute.name));
+    } else if (attribute.type === 'simple' || attribute.type === 'sentiment-api') {
+      // For sentiment analysis, automatically add the API key from the environment
+      if (attribute.type === 'sentiment-api') {
+        const sentimentConfig = {
+          ...attribute,
+          config: {
+            name: attribute.name,
+            description: attribute.description,
+            apiKey: process.env.NEXT_PUBLIC_JIGSAW_API_KEY || ''
+          }
+        };
+        onChange([...selectedAttributes, sentimentConfig]);
+      } else {
+        onChange([...selectedAttributes, attribute]);
+      }
+    } else {
+      setConfiguring(attribute);
+    }
+  };
+
+  const handleSaveConfig = (attribute: ResponseVariable, config: any) => {
+    const updatedAttributes = [...selectedAttributes];
+    const index = updatedAttributes.findIndex(a => a.name === attribute.name);
+    
+    if (index >= 0) {
+      updatedAttributes[index] = { ...attribute, config };
+    } else {
+      updatedAttributes.push({ ...attribute, config });
+    }
+    
+    onChange(updatedAttributes);
+    setConfiguring(null);
+  };
+
+  return (
+    <div className="space-y-4">
+      <h3 className="text-lg font-medium">Select Result Variables</h3>
+      <p className="text-sm text-gray-500">
+        Choose which variables to calculate for each response
+      </p>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {resultAttributes.map(attribute => (
@@ -43,6 +144,11 @@ export const ResultAttributeSelector: React.FC<ResultAttributeSelectorProps> = (
               <div>
                 <h4 className="font-medium text-gray-900">{attribute.name}</h4>
                 <p className="text-sm text-gray-600">{attribute.description}</p>
+                {attribute.type !== 'simple' && attribute.type !== 'sentiment-api' && !isAttributeSelected(attribute) && (
+                  <span className="inline-block mt-2 text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded">
+                    Requires configuration
+                  </span>
+                )}
               </div>
               <input
                 type="checkbox"
@@ -54,6 +160,14 @@ export const ResultAttributeSelector: React.FC<ResultAttributeSelectorProps> = (
           </div>
         ))}
       </div>
+
+      {configuring && (
+        <AttributeConfigModal
+          attribute={configuring}
+          onSave={handleSaveConfig}
+          onCancel={() => setConfiguring(null)}
+        />
+      )}
     </div>
   );
-}; 
+} 

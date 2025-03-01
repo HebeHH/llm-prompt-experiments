@@ -9,26 +9,29 @@ import { PricingPredictor } from '@/components/experiment/sections/PricingPredic
 import { ApiKeyManager } from '@/components/experiment/sections/ApiKeyManager';
 import { resultAttributes } from '@/lib/constants/resultAttributes';
 
+type ExtendedProvider = LLMProvider | 'jigsaw';
+
 interface ExperimentCreatorProps {
   onConfigChange: (config: AnalysisConfig) => void;
   onRunAnalysis: () => void;
   isRunning: boolean;
-  onApiKeysChange?: (keys: Record<LLMProvider, string>) => void;
+  onApiKeysChange?: (keys: Record<ExtendedProvider, string>) => void;
 }
 
-const defaultApiKeys: Record<LLMProvider, string> = {
+const defaultApiKeys: Record<ExtendedProvider, string> = {
   anthropic: process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY || '',
   google: process.env.NEXT_PUBLIC_GOOGLE_API_KEY || '',
   openai: process.env.NEXT_PUBLIC_OPENAI_API_KEY || '',
-  groq: process.env.NEXT_PUBLIC_GROQ_API_KEY || ''
+  groq: process.env.NEXT_PUBLIC_GROQ_API_KEY || '',
+  jigsaw: process.env.NEXT_PUBLIC_JIGSAW_API_KEY || ''
 };
 
 type WizardStep = {
   id: string;
   title: string;
   component: React.FC<any>;
-  isValid: (config: AnalysisConfig, apiKeys: Record<LLMProvider, string>) => boolean;
-  validationMessage: (config: AnalysisConfig, apiKeys: Record<LLMProvider, string>) => string;
+  isValid: (config: AnalysisConfig, apiKeys: Record<ExtendedProvider, string>) => boolean;
+  validationMessage: (config: AnalysisConfig, apiKeys: Record<ExtendedProvider, string>) => string;
 };
 
 export const ExperimentCreator: React.FC<ExperimentCreatorProps> = ({
@@ -49,7 +52,7 @@ export const ExperimentCreator: React.FC<ExperimentCreatorProps> = ({
     },
   });
 
-  const [apiKeys, setApiKeys] = useState<Record<LLMProvider, string>>(defaultApiKeys);
+  const [apiKeys, setApiKeys] = useState<Record<ExtendedProvider, string>>(defaultApiKeys);
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
 
   const handleConfigUpdate = useCallback((update: Partial<AnalysisConfig>) => {
@@ -58,7 +61,7 @@ export const ExperimentCreator: React.FC<ExperimentCreatorProps> = ({
     onConfigChange(newConfig);
   }, [config, onConfigChange]);
 
-  const handleApiKeysUpdate = useCallback((keys: Record<LLMProvider, string>) => {
+  const handleApiKeysUpdate = useCallback((keys: Record<ExtendedProvider, string>) => {
     setApiKeys(keys);
     if (onApiKeysChange) {
       onApiKeysChange(keys);

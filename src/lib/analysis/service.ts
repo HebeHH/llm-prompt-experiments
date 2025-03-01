@@ -2,126 +2,111 @@ import { AnalysisConfig, AnalysisData, AnalysisResult } from '@/lib/types/analys
 import { LLMProviderFactory } from '@/lib/constants/llms';
 
 export interface AnalysisProgress {
-    completedPrompts: number;
     totalPrompts: number;
+    completedPrompts: number;
     modelProgress: Record<string, {
+        total: number;
         completed: number;
         failed: number;
-        total: number;
     }>;
+    stage: 'llm-responses' | 'result-variables';
+    resultVariablesProgress?: {
+        total: number;
+        completed: number;
+        failed: number;
+    };
 }
 
 export class AnalysisService {
     private config: AnalysisConfig;
-    private onProgress?: (progress: AnalysisProgress) => void;
+    private onProgress: (progress: AnalysisProgress) => void;
     private progress: AnalysisProgress;
 
-    constructor(config: AnalysisConfig, onProgress?: (progress: AnalysisProgress) => void) {
+    constructor(config: AnalysisConfig, onProgress: (progress: AnalysisProgress) => void) {
         this.config = config;
         this.onProgress = onProgress;
         this.progress = {
-            completedPrompts: 0,
             totalPrompts: 0,
-            modelProgress: {}
+            completedPrompts: 0,
+            modelProgress: {},
+            stage: 'llm-responses'
         };
     }
 
     private initializeProgress() {
-        // Calculate total prompts: number of prompt variables * number of category combinations
-        const categoryOptionCombinations = this.calculateTotalCombinations();
-        const totalPromptsPerModel = this.config.promptCovariates.length * categoryOptionCombinations;
-        const modelProgress: Record<string, { completed: number; failed: number; total: number }> = {};
+        const totalPrompts = this.calculateTotalPrompts();
+        this.progress = {
+            totalPrompts,
+            completedPrompts: 0,
+            modelProgress: {},
+            stage: 'llm-responses'
+        };
 
         this.config.models.forEach(model => {
-            modelProgress[model.name] = {
+            this.progress.modelProgress[model.name] = {
+                total: this.config.promptCovariates.length,
                 completed: 0,
-                failed: 0,
-                total: totalPromptsPerModel
+                failed: 0
             };
         });
 
-        this.progress = {
-            completedPrompts: 0,
-            totalPrompts: this.config.models.length * totalPromptsPerModel,
-            modelProgress
-        };
+        this.onProgress(this.progress);
+    }
 
-        if (this.onProgress) {
+    private calculateTotalPrompts(): number {
+        return this.config.models.length * this.config.promptCovariates.length;
+    }
+
+    private updateProgress(model: string, success: boolean) {
+        if (success) {
+            this.progress.modelProgress[model].completed++;
+        } else {
+            this.progress.modelProgress[model].failed++;
+        }
+        this.progress.completedPrompts++;
+        this.onProgress({ ...this.progress });
+    }
+
+    private initializeResultVariablesProgress(results: AnalysisResult[]) {
+        const apiVariables = this.config.responseVariables.filter(v => v.requiresApiCall);
+        if (apiVariables.length > 0) {
+            this.progress.stage = 'result-variables';
+            this.progress.resultVariablesProgress = {
+                total: results.length * apiVariables.length,
+                completed: 0,
+                failed: 0
+            };
             this.onProgress({ ...this.progress });
         }
     }
 
-    private updateProgress(modelName: string, success: boolean) {
-        if (this.progress.modelProgress[modelName]) {
+    private updateResultVariablesProgress(success: boolean) {
+        if (this.progress.resultVariablesProgress) {
             if (success) {
-                this.progress.modelProgress[modelName].completed++;
+                this.progress.resultVariablesProgress.completed++;
             } else {
-                this.progress.modelProgress[modelName].failed++;
+                this.progress.resultVariablesProgress.failed++;
             }
-            this.progress.completedPrompts++;
-
-            // Create a new object to ensure React detects the change
-            const newProgress = {
-                ...this.progress,
-                modelProgress: {
-                    ...this.progress.modelProgress,
-                    [modelName]: { ...this.progress.modelProgress[modelName] }
-                }
-            };
-            this.progress = newProgress;
-
-            if (this.onProgress) {
-                this.onProgress(newProgress);
-            }
+            this.onProgress({ ...this.progress });
         }
-    }
-
-    private calculateTotalCombinations(): number {
-        return this.config.promptFactors.reduce((total, category) => {
-            return total * category.levels.length;
-        }, 1);
-    }
-
-    private generateCategoryCombinations() {
-        const categories = this.config.promptFactors;
-        if (categories.length === 0) return [[]];
-
-        const combinations: Array<Array<{ categoryName: string; option: { name: string; prompt: string } }>> = [[]];
-        
-        categories.forEach(category => {
-            const newCombinations: Array<Array<{ categoryName: string; option: { name: string; prompt: string } }>> = [];
-            
-            combinations.forEach(combination => {
-                category.levels.forEach(option => {
-                    newCombinations.push([
-                        ...combination,
-                        { categoryName: category.name, option }
-                    ]);
-                });
-            });
-            
-            combinations.length = 0;
-            combinations.push(...newCombinations);
-        });
-
-        return combinations;
     }
 
     public async runAnalysis(): Promise<AnalysisData> {
         this.initializeProgress();
         const results: AnalysisResult[] = [];
         const retryLimit = 3;
-        const categoryCombinations = this.generateCategoryCombinations();
 
-        // Process all models in parallel, but keep each model's prompts sequential
+        // Get all possible combinations of prompt factors
+        const combinations = this.generateCombinations();
+
+        // Step 1: Get LLM responses
         await Promise.all(this.config.models.map(async (model) => {
             const llm = LLMProviderFactory.getProvider(model.provider);
 
             for (let promptIdx = 0; promptIdx < this.config.promptCovariates.length; promptIdx++) {
                 const promptVariable = this.config.promptCovariates[promptIdx];
 
-                // Process each category combination
-                for (const combination of categoryCombinations) {
+                for (const combination of combinations) {
                     let retryCount = 0;
                     let success = false;
 
@@ -152,29 +137,77 @@ export class AnalysisService {
                                 result.factors[categoryName] = option.name;
                             });
 
-                            // Calculate attributes
-                            this.config.responseVariables.forEach(attr => {
-                                result.responseVariables[attr.name] = attr.function(llmResponse.response);
-                            });
-
                             results.push(result);
                             success = true;
+                            this.updateProgress(model.name, true);
                         } catch (error) {
                             retryCount++;
                             if (retryCount === retryLimit) {
+                                this.updateProgress(model.name, false);
                                 console.error(`Failed to get response after ${retryLimit} attempts for model ${model.name}`);
                             }
                         }
                     }
-
-                    this.updateProgress(model.name, success);
                 }
             }
         }));
 
+        // Step 2: Calculate result variables
+        this.initializeResultVariablesProgress(results);
+
+        // First handle non-API result variables
+        const simpleVariables = this.config.responseVariables.filter(v => !v.requiresApiCall);
+        for (const result of results) {
+            for (const attr of simpleVariables) {
+                try {
+                    result.responseVariables[attr.name] = await attr.function(result.llmResponse.response, attr.config);
+                } catch (error) {
+                    console.error(`Failed to calculate ${attr.name}:`, error);
+                    result.responseVariables[attr.name] = attr.dataType === 'numerical' ? 0 : 'error';
+                }
+            }
+        }
+
+        // Then handle API-based result variables
+        const apiVariables = this.config.responseVariables.filter(v => v.requiresApiCall);
+        if (apiVariables.length > 0) {
+            for (const result of results) {
+                for (const attr of apiVariables) {
+                    try {
+                        result.responseVariables[attr.name] = await attr.function(
+                            result.llmResponse.response,
+                            attr.config
+                        );
+                        this.updateResultVariablesProgress(true);
+                    } catch (error) {
+                        console.error(`Failed to calculate ${attr.name}:`, error);
+                        result.responseVariables[attr.name] = attr.dataType === 'numerical' ? 0 : 'error';
+                        this.updateResultVariablesProgress(false);
+                    }
+                }
+            }
+        }
+
         return {
             config: this.config,
-            results
+            results: results
         };
+    }
+
+    private generateCombinations() {
+        const combinations: Array<Array<{ categoryName: string; option: { name: string; prompt: string } }>> = [[]];
+
+        this.config.promptFactors.forEach(category => {
+            const temp: typeof combinations = [];
+            combinations.forEach(combo => {
+                category.levels.forEach(option => {
+                    temp.push([...combo, { categoryName: category.name, option }]);
+                });
+            });
+            combinations.length = 0;
+            combinations.push(...temp);
+        });
+
+        return combinations;
     }
 } 
