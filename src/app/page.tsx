@@ -159,23 +159,23 @@ export default function Home() {
     };
 
     return (
-        <main className="min-h-screen bg-gray-100 py-8">
+        <main className="min-h-screen bg-teal-900 py-8">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex justify-between items-center mb-8">
-                    <h1 className="text-3xl font-bold text-gray-900">
+                    <h1 className="text-3xl font-bold text-white">
                         AI Response Analysis Dashboard
                     </h1>
                     {currentView === 'results' && (
                         <div className="flex gap-4">
                             <button
                                 onClick={handleNewExperiment}
-                                className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                                className="px-4 py-2 bg-violet-500 text-white rounded-lg hover:bg-violet-600 font-medium"
                             >
                                 New Experiment
                             </button>
                             <button
                                 onClick={handleShowConfig}
-                                className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
+                                className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 font-medium"
                             >
                                 Show Configuration
                             </button>
@@ -186,19 +186,18 @@ export default function Home() {
                 <div className="space-y-8">
                     {/* Create Experiment Panel */}
                     {(currentView === 'create' || showExperimentPanel) && (
-                        <div className="bg-white rounded-lg shadow-lg flex flex-col h-[calc(100vh-12rem)]">
-                            <div className="flex items-center justify-between px-6 py-4 border-b border-violet-200 bg-violet-50">
-                                <h2 className="text-xl font-semibold text-gray-900">New Experiment</h2>
-                                {currentView === 'results' && (
+                        <div className="bg-white rounded-xl shadow-xl flex flex-col h-[calc(100vh-12rem)]">
+                            {currentView === 'results' && (
+                                <div className="flex justify-end px-4 py-2">
                                     <button
                                         onClick={() => setShowExperimentPanel(false)}
-                                        className="text-violet-500 hover:text-violet-700"
+                                        className="text-violet-500 hover:text-violet-700 p-1"
                                     >
                                         <span className="sr-only">Close panel</span>
                                         ×
                                     </button>
-                                )}
-                            </div>
+                                </div>
+                            )}
                             <ExperimentCreator
                                 onConfigChange={setConfig}
                                 onRunAnalysis={handleRunAnalysis}
@@ -210,22 +209,22 @@ export default function Home() {
 
                     {/* Progress Panel */}
                     {currentView === 'progress' && progress && (
-                        <div className="bg-white rounded-lg shadow-lg">
-                            <div className="flex items-center justify-between px-6 py-4 border-b border-violet-200 bg-violet-50">
-                                <h2 className="text-xl font-semibold text-gray-900">Analysis Progress</h2>
+                        <div className="bg-white rounded-xl shadow-xl overflow-hidden">
+                            <div className="flex items-center justify-between px-6 py-4 border-b border-violet-200 bg-violet-100">
+                                <h2 className="text-xl font-semibold text-violet-900">Analysis Progress</h2>
                             </div>
                             <div className="p-6">
                                 <div className="mb-6">
-                                    <div className="flex justify-between text-sm mb-2">
+                                    <div className="flex justify-between text-sm font-medium mb-2">
                                         <span>Overall Progress:</span>
                                         <span>
                                             {progress.completedPrompts} / {progress.totalPrompts} prompts
                                             {' '}({Math.round((progress.completedPrompts / progress.totalPrompts) * 100)}%)
                                         </span>
                                     </div>
-                                    <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
+                                    <div className="h-3 bg-violet-100 rounded-full overflow-hidden">
                                         <div
-                                            className="h-full bg-teal-600 transition-all duration-500 ease-in-out"
+                                            className="h-full bg-teal-500 transition-all duration-500 ease-in-out"
                                             style={{
                                                 width: `${(progress.completedPrompts / progress.totalPrompts) * 100}%`
                                             }}
@@ -235,7 +234,7 @@ export default function Home() {
                                 <div className="space-y-4">
                                     {Object.entries(progress.modelProgress).map(([model, stats]) => (
                                         <div key={model} className="space-y-2">
-                                            <div className="flex justify-between text-sm">
+                                            <div className="flex justify-between text-sm font-medium">
                                                 <span>{model}:</span>
                                                 <span>
                                                     {stats.completed} / {stats.total} prompts
@@ -243,10 +242,10 @@ export default function Home() {
                                                     {' '}({Math.round(((stats.completed + stats.failed) / stats.total) * 100)}%)
                                                 </span>
                                             </div>
-                                            <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                                            <div className="h-2 bg-violet-100 rounded-full overflow-hidden">
                                                 <div className="flex h-full">
                                                     <div
-                                                        className="h-full bg-teal-600 transition-all duration-500 ease-in-out"
+                                                        className="h-full bg-teal-500 transition-all duration-500 ease-in-out"
                                                         style={{
                                                             width: `${(stats.completed / stats.total) * 100}%`
                                                         }}
@@ -272,12 +271,12 @@ export default function Home() {
                     {currentView === 'results' && results && !showExperimentPanel && (
                         <div className="space-y-8">
                             {showConfigView && (
-                                <div className="bg-white rounded-lg shadow-lg">
-                                    <div className="flex items-center justify-between px-6 py-4 border-b border-violet-200 bg-violet-50">
-                                        <h2 className="text-xl font-semibold text-gray-900">Experiment Configuration</h2>
+                                <div className="bg-white rounded-xl shadow-xl overflow-hidden">
+                                    <div className="flex items-center justify-between px-6 py-4 border-b border-violet-200 bg-violet-100">
+                                        <h2 className="text-xl font-semibold text-violet-900">Experiment Configuration</h2>
                                         <button
                                             onClick={() => setShowConfigView(false)}
-                                            className="text-violet-500 hover:text-violet-700"
+                                            className="text-violet-500 hover:text-violet-700 p-1"
                                         >
                                             <span className="sr-only">Close panel</span>
                                             ×
@@ -286,25 +285,25 @@ export default function Home() {
                                     <div className="p-6">
                                         <div className="space-y-6">
                                             <div>
-                                                <h4 className="font-medium mb-2">Selected Models</h4>
-                                                <ul className="list-disc list-inside space-y-1 text-gray-600">
+                                                <h4 className="font-medium mb-2 text-violet-900">Selected Models</h4>
+                                                <ul className="list-disc list-inside space-y-1 text-gray-700">
                                                     {config.models.map(model => (
                                                         <li key={model.name}>{model.name} ({model.provider})</li>
                                                     ))}
                                                 </ul>
                                             </div>
                                             <div>
-                                                <h4 className="font-medium mb-2">Prompt Factors</h4>
+                                                <h4 className="font-medium mb-2 text-violet-900">Prompt Factors</h4>
                                                 <div className="space-y-4">
                                                     {config.promptFactors.map(factor => (
-                                                        <div key={factor.name} className="bg-gray-50 p-4 rounded-lg">
-                                                            <h5 className="font-medium mb-2">{factor.name}</h5>
-                                                            <ul className="list-disc list-inside space-y-1 text-gray-600">
+                                                        <div key={factor.name} className="bg-violet-50 p-4 rounded-lg">
+                                                            <h5 className="font-medium mb-2 text-violet-900">{factor.name}</h5>
+                                                            <ul className="list-disc list-inside space-y-1 text-gray-700">
                                                                 {factor.levels.map(level => (
                                                                     <li key={level.name}>
                                                                         {level.name}
                                                                         {level.prompt && (
-                                                                            <span className="text-gray-500"> - {level.prompt}</span>
+                                                                            <span className="text-gray-600"> - {level.prompt}</span>
                                                                         )}
                                                                     </li>
                                                                 ))}
@@ -314,8 +313,8 @@ export default function Home() {
                                                 </div>
                                             </div>
                                             <div>
-                                                <h4 className="font-medium mb-2">Prompt Covariates</h4>
-                                                <ul className="list-decimal list-inside space-y-1 text-gray-600">
+                                                <h4 className="font-medium mb-2 text-violet-900">Prompt Covariates</h4>
+                                                <ul className="list-decimal list-inside space-y-1 text-gray-700">
                                                     {config.promptCovariates.map((variable, index) => (
                                                         <li key={index} className="flex items-start">
                                                             <span className="mr-2">{index + 1}.</span>
@@ -325,12 +324,12 @@ export default function Home() {
                                                 </ul>
                                             </div>
                                             <div>
-                                                <h4 className="font-medium mb-2">Response Variables</h4>
-                                                <ul className="list-disc list-inside space-y-1 text-gray-600">
+                                                <h4 className="font-medium mb-2 text-violet-900">Response Variables</h4>
+                                                <ul className="list-disc list-inside space-y-1 text-gray-700">
                                                     {config.responseVariables.map(attr => (
                                                         <li key={attr.name}>
                                                             {attr.name}
-                                                            <span className="text-gray-500"> - {attr.description}</span>
+                                                            <span className="text-gray-600"> - {attr.description}</span>
                                                         </li>
                                                     ))}
                                                 </ul>
@@ -339,9 +338,9 @@ export default function Home() {
                                     </div>
                                 </div>
                             )}
-                            <div className="bg-white rounded-lg shadow-lg">
-                                <div className="flex items-center justify-between px-6 py-4 border-b border-violet-200 bg-violet-50">
-                                    <h2 className="text-xl font-semibold text-gray-900">Results</h2>
+                            <div className="bg-white rounded-xl shadow-xl overflow-hidden">
+                                <div className="flex items-center justify-between px-6 py-4 border-b border-violet-200 bg-violet-100">
+                                    <h2 className="text-xl font-semibold text-violet-900">Results</h2>
                                 </div>
                                 <div className="p-6">
                                     <ResultsVisualization data={results} />
@@ -352,7 +351,7 @@ export default function Home() {
                 </div>
 
                 {error && (
-                    <div className="mt-4 p-4 bg-red-100 text-red-700 rounded-md">
+                    <div className="mt-4 p-4 bg-red-100 text-red-700 rounded-xl font-medium">
                         {error}
                     </div>
                 )}

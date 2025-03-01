@@ -153,18 +153,11 @@ export const ExperimentCreator: React.FC<ExperimentCreatorProps> = ({
           {steps.map((step, index) => (
             <button
               key={step.id}
-              onClick={() => {
-                if (index <= currentStepIndex || 
-                    (index > currentStepIndex && steps[currentStepIndex].isValid(config, apiKeys))) {
-                  setCurrentStepIndex(index);
-                }
-              }}
+              onClick={() => setCurrentStepIndex(index)}
               className={`py-3 px-4 -mb-px relative ${
                 index === currentStepIndex
                   ? 'text-teal-600 font-medium'
-                  : index < currentStepIndex || step.isValid(config, apiKeys)
-                    ? 'text-violet-600 hover:text-violet-800'
-                    : 'text-gray-300 cursor-not-allowed'
+                  : 'text-violet-600 hover:text-violet-800'
               }`}
             >
               {step.title}
@@ -203,7 +196,7 @@ export const ExperimentCreator: React.FC<ExperimentCreatorProps> = ({
       </div>
 
       {/* Footer with navigation */}
-      <div className="p-6 border-t border-violet-200 bg-violet-50">
+      <div className="p-6 border-t border-violet-200 bg-violet-100">
         <div className="flex justify-between items-center">
           {!currentStep.isValid(config, apiKeys) && (
             <p className="text-sm text-red-600 font-medium">
@@ -215,7 +208,7 @@ export const ExperimentCreator: React.FC<ExperimentCreatorProps> = ({
             {canGoPrev && (
               <button
                 onClick={() => setCurrentStepIndex(prev => prev - 1)}
-                className="px-6 py-2 border-2 border-violet-300 rounded-lg text-violet-700 hover:bg-violet-50 hover:border-violet-400 font-medium"
+                className="px-6 py-2 border-2 border-violet-400 rounded-lg text-violet-700 hover:bg-violet-50 hover:border-violet-500 font-medium"
               >
                 Previous
               </button>
@@ -226,7 +219,7 @@ export const ExperimentCreator: React.FC<ExperimentCreatorProps> = ({
                 disabled={!canGoNext}
                 className={`px-6 py-2 rounded-lg font-medium ${
                   canGoNext
-                    ? 'bg-teal-600 text-white hover:bg-teal-700 border-2 border-teal-600'
+                    ? 'bg-teal-500 text-white hover:bg-teal-600 border-2 border-teal-500'
                     : 'bg-gray-100 text-gray-400 border-2 border-gray-200 cursor-not-allowed'
                 }`}
               >
@@ -239,7 +232,7 @@ export const ExperimentCreator: React.FC<ExperimentCreatorProps> = ({
                 className={`px-6 py-2 rounded-lg font-medium ${
                   !isValidConfig || isRunning
                     ? 'bg-gray-100 text-gray-400 border-2 border-gray-200 cursor-not-allowed'
-                    : 'bg-teal-600 text-white hover:bg-teal-700 border-2 border-teal-600'
+                    : 'bg-teal-500 text-white hover:bg-teal-600 border-2 border-teal-500'
                 }`}
               >
                 {isRunning ? 'Running Analysis...' : 'Run Analysis'}
