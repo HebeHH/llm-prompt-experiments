@@ -1,5 +1,5 @@
 import { AnalysisConfig, AnalysisData, AnalysisResult } from '@/lib/types/analysis';
-import { LLMProviderFactory } from '@/lib/llm/factory';
+import { LLMProviderFactory } from '@/lib/constants/llms';
 
 export interface AnalysisProgress {
     completedPrompts: number;
@@ -29,7 +29,7 @@ export class AnalysisService {
     private initializeProgress() {
         // Calculate total prompts: number of prompt variables * number of category combinations
         const categoryOptionCombinations = this.calculateTotalCombinations();
-        const totalPromptsPerModel = this.config.promptVariables.length * categoryOptionCombinations;
+        const totalPromptsPerModel = this.config.promptCovariates.length * categoryOptionCombinations;
         const modelProgress: Record<string, { completed: number; failed: number; total: number }> = {};
 
         this.config.models.forEach(model => {
@@ -77,13 +77,13 @@ export class AnalysisService {
     }
 
     private calculateTotalCombinations(): number {
-        return this.config.promptCategories.reduce((total, category) => {
-            return total * category.categories.length;
+        return this.config.promptFactors.reduce((total, category) => {
+            return total * category.levels.length;
         }, 1);
     }
 
     private generateCategoryCombinations() {
-        const categories = this.config.promptCategories;
+        const categories = this.config.promptFactors;
         if (categories.length === 0) return [[]];
 
         const combinations: Array<Array<{ categoryName: string; option: { name: string; prompt: string } }>> = [[]];
@@ -92,7 +92,7 @@ export class AnalysisService {
             const newCombinations: Array<Array<{ categoryName: string; option: { name: string; prompt: string } }>> = [];
             
             combinations.forEach(combination => {
-                category.categories.forEach(option => {
+                category.levels.forEach(option => {
                     newCombinations.push([
                         ...combination,
                         { categoryName: category.name, option }
@@ -117,8 +117,8 @@ export class AnalysisService {
         await Promise.all(this.config.models.map(async (model) => {
             const llm = LLMProviderFactory.getProvider(model.provider);
 
-            for (let promptIdx = 0; promptIdx < this.config.promptVariables.length; promptIdx++) {
-                const promptVariable = this.config.promptVariables[promptIdx];
+            for (let promptIdx = 0; promptIdx < this.config.promptCovariates.length; promptIdx++) {
+                const promptVariable = this.config.promptCovariates[promptIdx];
 
                 // Process each category combination
                 for (const combination of categoryCombinations) {
@@ -142,19 +142,19 @@ export class AnalysisService {
                                     model: model,
                                     response: llmResponse.response
                                 },
-                                categories: {},
-                                attributes: {},
+                                factors: {},
+                                responseVariables: {},
                                 promptVariableIndex: promptIdx
                             };
 
                             // Add category information
                             combination.forEach(({ categoryName, option }) => {
-                                result.categories[categoryName] = option.name;
+                                result.factors[categoryName] = option.name;
                             });
 
                             // Calculate attributes
-                            this.config.responseAttributes.forEach(attr => {
-                                result.attributes[attr.name] = attr.function(llmResponse.response);
+                            this.config.responseVariables.forEach(attr => {
+                                result.responseVariables[attr.name] = attr.function(llmResponse.response);
                             });
 
                             results.push(result);

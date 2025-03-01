@@ -40,14 +40,14 @@ export const GroupedBarGraph: React.FC<GraphProps> = (props) => {
             if (groupedConfig.xAxis.name === 'model') {
                 xKey = result.llmResponse.model.name;
             } else {
-                xKey = result.categories[groupedConfig.xAxis.name] || 'default';
+                xKey = result.factors[groupedConfig.xAxis.name] || 'default';
             }
 
             let colorKey = '';
             if (groupedConfig.colorAxis.name === 'model') {
                 colorKey = result.llmResponse.model.name;
             } else {
-                colorKey = result.categories[groupedConfig.colorAxis.name] || 'default';
+                colorKey = result.factors[groupedConfig.colorAxis.name] || 'default';
             }
 
             if (!groupedData[xKey]) {
@@ -57,7 +57,7 @@ export const GroupedBarGraph: React.FC<GraphProps> = (props) => {
                 groupedData[xKey][colorKey] = [];
             }
 
-            const value = result.attributes[groupedConfig.yAxis.name];
+            const value = result.responseVariables[groupedConfig.yAxis.name];
             if (typeof value === 'number') {
                 groupedData[xKey][colorKey].push(value);
             }
@@ -85,7 +85,7 @@ export const GroupedBarGraph: React.FC<GraphProps> = (props) => {
             if (groupedConfig.colorAxis.name === 'model') {
                 colorKey = result.llmResponse.model.name;
             } else {
-                colorKey = result.categories[groupedConfig.colorAxis.name] || 'default';
+                colorKey = result.factors[groupedConfig.colorAxis.name] || 'default';
             }
             categories.add(colorKey);
         });

@@ -1,14 +1,14 @@
 import { LLMModel } from './llm';
 
-export interface PromptCategory {
+export interface PromptFactor {
     name: string;
-    categories: {
+    levels: {
         name: string;
         prompt: string;
     }[];
 }
 
-export interface ResponseAttribute {
+export interface ResponseVariable {
     name: string;
     description: string;
     dataType: 'numerical' | 'categorical';
@@ -19,9 +19,9 @@ export interface AnalysisConfig {
     name: string;
     description: string;
     models: LLMModel[];
-    promptCategories: PromptCategory[];
-    promptVariables: string[];
-    responseAttributes: ResponseAttribute[];
+    promptFactors: PromptFactor[];
+    promptCovariates: string[];
+    responseVariables: ResponseVariable[];
     promptFunction: (categories: string[], variable: string) => string;
 }
 
@@ -30,8 +30,8 @@ export interface AnalysisResult {
         model: LLMModel;
         response: string;
     };
-    categories: Record<string, string>;
-    attributes: Record<string, number | string>;
+    factors: Record<string, string>;
+    responseVariables: Record<string, number | string>;
     promptVariableIndex: number;
 }
 

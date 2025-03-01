@@ -1,30 +1,30 @@
 import React, { useMemo } from 'react';
 import { LLMModel } from '@/lib/types/llm';
-import { PromptCategory } from '@/lib/types/analysis';
+import { PromptFactor } from '@/lib/types/analysis';
 
 interface PricingPredictorProps {
   models: LLMModel[];
-  promptCategories: PromptCategory[];
-  promptVariables: string[];
+  promptFactors: PromptFactor[];
+  promptCovariates: string[];
 }
 
 export const PricingPredictor: React.FC<PricingPredictorProps> = ({
   models,
-  promptCategories,
-  promptVariables,
+  promptFactors: promptCategories,
+  promptCovariates: promptVariables,
 }) => {
   const estimations = useMemo(() => {
     // Calculate total number of prompts
     const totalPromptCombinations = promptCategories.reduce((acc, category) => {
       // Each category must have at least one option (even if it's empty)
-      const optionCount = Math.max(1, category.categories.length);
+      const optionCount = Math.max(1, category.levels.length);
       return acc * optionCount;
     }, 1);
     const totalPrompts = totalPromptCombinations * promptVariables.length;
 
     // Calculate average prompt length (in words) from categories
     const avgCategoryPromptLength = promptCategories.reduce((acc, category) => {
-      const categoryPrompts = category.categories.map(c => c.prompt);
+      const categoryPrompts = category.levels.map(c => c.prompt);
       const totalWords = categoryPrompts.reduce(
         (sum, prompt) => sum + (prompt.match(/\b\w+\b/g)?.length || 0),
         0

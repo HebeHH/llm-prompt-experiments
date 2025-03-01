@@ -74,14 +74,14 @@ export interface GraphProps {
 export const getAvailableAxes = (data: AnalysisData): { categorical: DataAxis[], numerical: DataAxis[] } => {
     const categorical: DataAxis[] = [
         { type: 'categorical', name: 'model', label: 'Model' },
-        ...data.config.promptCategories.map(cat => ({
+        ...data.config.promptFactors.map(cat => ({
             type: 'categorical' as const,
             name: cat.name,
             label: cat.name.charAt(0).toUpperCase() + cat.name.slice(1)
         }))
     ];
 
-    const numerical: DataAxis[] = data.config.responseAttributes.map(attr => ({
+    const numerical: DataAxis[] = data.config.responseVariables.map(attr => ({
         type: 'numerical',
         name: attr.name,
         label: attr.name.replace(/([A-Z])/g, ' $1').trim()

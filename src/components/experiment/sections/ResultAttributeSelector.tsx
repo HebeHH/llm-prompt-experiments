@@ -1,20 +1,20 @@
 import React from 'react';
-import { ResponseAttribute } from '@/lib/types/analysis';
+import { ResponseVariable } from '@/lib/types/analysis';
 import { resultAttributes } from '@/lib/constants/resultAttributes'
 
 interface ResultAttributeSelectorProps {
-  selectedAttributes: ResponseAttribute[];
-  onChange: (attributes: ResponseAttribute[]) => void;
+  selectedAttributes: ResponseVariable[];
+  onChange: (attributes: ResponseVariable[]) => void;
 }
 
 export const ResultAttributeSelector: React.FC<ResultAttributeSelectorProps> = ({
   selectedAttributes,
   onChange,
 }) => {
-  const isAttributeSelected = (attribute: ResponseAttribute) =>
+  const isAttributeSelected = (attribute: ResponseVariable) =>
     selectedAttributes.some(a => a.name === attribute.name);
 
-  const handleAttributeToggle = (attribute: ResponseAttribute) => {
+  const handleAttributeToggle = (attribute: ResponseVariable) => {
     if (isAttributeSelected(attribute)) {
       onChange(selectedAttributes.filter(a => a.name !== attribute.name));
     } else {

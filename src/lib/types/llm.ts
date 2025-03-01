@@ -1,13 +1,15 @@
-export type LLMProvider = 'anthropic' | 'google' | 'openai';
+import type { LLMProvider } from '../constants/llms';
 
-export interface LLMModel  {
-        name: string,
-        provider: LLMProvider,
-        pricing: {
-            perMillionTokensInput: number,
-            perMillionTokensOutput: number,
-        }
+export type { LLMProvider };
+
+export interface LLMModel {
+    name: string,
+    provider: LLMProvider, // Now properly constrained by the providers registry type
+    pricing: {
+        perMillionTokensInput: number,
+        perMillionTokensOutput: number,
     }
+}
 
 export interface LLMResponse {
     model: LLMModel;
@@ -21,4 +23,5 @@ export interface LLMConfig {
     anthropicApiKey?: string;
     googleApiKey?: string;
     openaiApiKey?: string;
+    groqApiKey?: string;
 } 

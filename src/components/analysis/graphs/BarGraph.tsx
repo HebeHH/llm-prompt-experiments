@@ -27,14 +27,14 @@ export const BarGraph: React.FC<GraphProps> = (props) => {
             if (barConfig.xAxis.name === 'model') {
                 key = result.llmResponse.model.name;
             } else {
-                key = result.categories[barConfig.xAxis.name] || 'default';
+                key = result.factors[barConfig.xAxis.name] || 'default';
             }
 
             if (!groupedData[key]) {
                 groupedData[key] = { total: 0, count: 0 };
             }
 
-            const value = result.attributes[barConfig.yAxis.name];
+            const value = result.responseVariables[barConfig.yAxis.name];
             // Only aggregate if the value is a number
             if (typeof value === 'number') {
                 groupedData[key].total += value;

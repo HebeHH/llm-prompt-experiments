@@ -40,7 +40,7 @@ export const RadarGraph: React.FC<GraphProps> = (props) => {
             if (radarConfig.colorAxis.name === 'model') {
                 category = result.llmResponse.model.name;
             } else {
-                category = result.categories[radarConfig.colorAxis.name] || 'default';
+                category = result.factors[radarConfig.colorAxis.name] || 'default';
             }
 
             if (!groupedData[category]) {
@@ -51,7 +51,7 @@ export const RadarGraph: React.FC<GraphProps> = (props) => {
             }
 
             metrics.forEach((metric: DataAxis) => {
-                const value = result.attributes[metric.name];
+                const value = result.responseVariables[metric.name];
                 if (typeof value === 'number') {
                     groupedData[category][metric.name].push(value);
                 }
@@ -92,7 +92,7 @@ export const RadarGraph: React.FC<GraphProps> = (props) => {
             if (radarConfig.colorAxis.name === 'model') {
                 category = result.llmResponse.model.name;
             } else {
-                category = result.categories[radarConfig.colorAxis.name] || 'default';
+                category = result.factors[radarConfig.colorAxis.name] || 'default';
             }
             cats.add(category);
         });

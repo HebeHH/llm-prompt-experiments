@@ -1,0 +1,235 @@
+<src/lib/llm/anthropic.ts>
+L4: 
+L5: export class AnthropicProvider extends BaseLLMProvider {
+L6:     private client: Anthropic | null = null;
+L7: 
+L8:     initialize(config: { anthropicApiKey?: string }): void {
+L9:         super.initialize(config);
+L10:         if (!config.anthropicApiKey) {
+L11:             throw new Error('Anthropic API key is required');
+L12:         }
+L13:         this.client = new Anthropic({
+L14:             apiKey: config.anthropicApiKey,
+L15:             dangerouslyAllowBrowser: true
+L16:         });
+L17:     }
+L18: 
+L19:     async generateResponse(model: LLMModel, prompt: string): Promise<LLMResponse> {
+L20:         try {
+L21:             if (!this.client) {
+L22:                 throw new Error('Anthropic client not initialized');
+L23:             }
+L24: 
+L25:             const completion = await this.client.messages.create({
+L26:                 model: model.name,
+L27:                 max_tokens: 1024,
+L28:                 messages: [{ role: 'user', content: prompt }],
+L29:             });
+L30: 
+L31:             const responseText = completion.content.map(block => {
+L32:                 if ('text' in block) {
+L33:                     return block.text;
+L34:                 }
+L35:                 return '';
+L36:             }).join('');
+L37: 
+L38:             return this.createResponse(
+L39:                 model,
+L40:                 prompt,
+L41:                 responseText
+L42:             );
+L43:         } catch (error) {
+L44:             return this.createResponse(
+L45:                 model,
+L46:                 prompt,
+L47:                 '',
+L48:                 error instanceof Error ? error.message : 'Unknown error'
+L49:             );
+L50:         }
+L51:     }
+L52: } 
+</src/lib/llm/anthropic.ts>
+
+<src/lib/llm/base.ts>
+L2: 
+L3: export interface LLMProvider {
+L4:     initialize(config: LLMConfig): void;
+L5:     generateResponse(model: LLMModel, prompt: string): Promise<LLMResponse>;
+L6: }
+L7: 
+L8: export abstract class BaseLLMProvider implements LLMProvider {
+L9:     protected config: LLMConfig = {};
+L10: 
+L11:     initialize(config: LLMConfig): void {
+L12:         this.config = config;
+L13:     }
+L14: 
+L15:     abstract generateResponse(model: LLMModel, prompt: string): Promise<LLMResponse>;
+L16: 
+L17:     protected createResponse(model: LLMModel, prompt: string, response: string, error?: string): LLMResponse {
+L18:         return {
+L19:             model,
+L20:             prompt,
+L21:             response,
+L22:             error,
+L23:             timestamp: Date.now(),
+L24:         };
+L25:     }
+L26: } 
+</src/lib/llm/base.ts>
+
+<src/lib/llm/factory.ts>
+L6: 
+L7: export class LLMProviderFactory {
+L8:     private static providers: Record<LLMProviderType, LLMProvider> = {
+L9:         anthropic: new AnthropicProvider(),
+L10:         google: new GoogleProvider(),
+L11:         openai: new OpenAIProvider(),
+L12:     };
+L13: 
+L14:     private static initialized = false;
+L15: 
+L16:     static initialize(config: LLMConfig): void {
+L17:         if (this.initialized) {
+L18:             return;
+L19:         }
+L20: 
+L21:         Object.entries(this.providers).forEach(([provider, instance]) => {
+L22:             try {
+L23:                 instance.initialize(config);
+L24:             } catch (error) {
+L25:                 console.warn(`Failed to initialize ${provider} provider:`, error);
+L26:             }
+L27:         });
+L28: 
+L29:         this.initialized = true;
+L30:     }
+L31: 
+L32:     static getProvider(provider: LLMProviderType): LLMProvider {
+L33:         if (!this.initialized) {
+L34:             throw new Error('LLMProviderFactory not initialized');
+L35:         }
+L36: 
+L37:         const instance = this.providers[provider];
+L38:         if (!instance) {
+L39:             throw new Error(`Provider ${provider} not found`);
+L40:         }
+L41: 
+L42:         return instance;
+L43:     }
+L44: } 
+</src/lib/llm/factory.ts>
+
+<src/lib/llm/google.ts>
+L4: 
+L5: export class GoogleProvider extends BaseLLMProvider {
+L6:     private client: GoogleGenerativeAI | null = null;
+L7: 
+L8:     initialize(config: { googleApiKey?: string }): void {
+L9:         super.initialize(config);
+L10:         if (!config.googleApiKey) {
+L11:             throw new Error('Google API key is required');
+L12:         }
+L13:         this.client = new GoogleGenerativeAI(config.googleApiKey);
+L14:     }
+L15: 
+L16:     async generateResponse(model: LLMModel, prompt: string): Promise<LLMResponse> {
+L17:         try {
+L18:             if (!this.client) {
+L19:                 throw new Error('Google client not initialized');
+L20:             }
+L21: 
+L22:             const genModel = this.client.getGenerativeModel({ model: model.name });
+L23:             const result = await genModel.generateContent(prompt);
+L24:             const response = result.response;
+L25:             
+L26:             return this.createResponse(
+L27:                 model,
+L28:                 prompt,
+L29:                 response.text()
+L30:             );
+L31:         } catch (error) {
+L32:             return this.createResponse(
+L33:                 model,
+L34:                 prompt,
+L35:                 '',
+L36:                 error instanceof Error ? error.message : 'Unknown error'
+L37:             );
+L38:         }
+L39:     }
+L40: } 
+</src/lib/llm/google.ts>
+
+<src/lib/llm/openai.ts>
+L4: 
+L5: export class OpenAIProvider extends BaseLLMProvider {
+L6:     private client: OpenAI | null = null;
+L7: 
+L8:     initialize(config: { openaiApiKey?: string }): void {
+L9:         super.initialize(config);
+L10:         if (!config.openaiApiKey) {
+L11:             throw new Error('OpenAI API key is required');
+L12:         }
+L13:         this.client = new OpenAI({
+L14:             apiKey: config.openaiApiKey,
+L15:             dangerouslyAllowBrowser: true
+L16:         });
+L17:     }
+L18: 
+L19:     async generateResponse(model: LLMModel, prompt: string): Promise<LLMResponse> {
+L20:         try {
+L21:             if (!this.client) {
+L22:                 throw new Error('OpenAI client not initialized');
+L23:             }
+L24: 
+L25:             const completion = await this.client.chat.completions.create({
+L26:                 model: model.name,
+L27:                 messages: [{ role: 'user', content: prompt }],
+L28:             });
+L29: 
+L30:             const responseText = completion.choices[0]?.message?.content || '';
+L31:             
+L32:             return this.createResponse(
+L33:                 model,
+L34:                 prompt,
+L35:                 responseText
+L36:             );
+L37:         } catch (error) {
+L38:             return this.createResponse(
+L39:                 model,
+L40:                 prompt,
+L41:                 '',
+L42:                 error instanceof Error ? error.message : 'Unknown error'
+L43:             );
+L44:         }
+L45:     }
+L46: } 
+</src/lib/llm/openai.ts>
+
+<src/lib/types/llm.ts>
+L1: export type LLMProvider = 'anthropic' | 'google' | 'openai';
+L2: 
+L3: export interface LLMModel  {
+L4:         name: string,
+L5:         provider: LLMProvider,
+L6:         pricing: {
+L7:             perMillionTokensInput: number,
+L8:             perMillionTokensOutput: number,
+L9:         }
+L10:     }
+L11: 
+L12: export interface LLMResponse {
+L13:     model: LLMModel;
+L14:     prompt: string;
+L15:     response: string;
+L16:     error?: string;
+L17:     timestamp: number;
+L18: }
+L19: 
+L20: export interface LLMConfig {
+L21:     anthropicApiKey?: string;
+L22:     googleApiKey?: string;
+L23:     openaiApiKey?: string;
+L24: } 
+</src/lib/types/llm.ts>
+
