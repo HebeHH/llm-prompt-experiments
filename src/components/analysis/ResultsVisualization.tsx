@@ -16,7 +16,7 @@ import { BarGraph } from './graphs/BarGraph';
 import { StackedBarGraph } from './graphs/StackedBarGraph';
 import { GroupedBarGraph } from './graphs/GroupedBarGraph';
 import { RadarGraph } from './graphs/RadarGraph';
-import { BoxPlotGraph } from './graphs/BoxPlotGraph';
+import { BoxPlotGraph } from './graphs/BoxPlotGraph'
 import { HistogramGraph } from './graphs/HistogramGraph';
 import { ResponseModal } from './ResponseModal';
 import { v4 as uuidv4 } from 'uuid';
