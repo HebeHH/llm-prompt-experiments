@@ -37,7 +37,9 @@ export const PromptFactorEditor: React.FC<PromptFactorEditorProps> = ({
     // Add new factor at the top of the list
     onChange([newFactor, ...factors]);
     setNewFactorName('');
-    setExpandedFactors(prev => [...prev, newFactorName]);
+    
+    // Collapse all existing factors and only expand the new one
+    setExpandedFactors([newFactorName]);
     
     // Schedule focus for the next render cycle
     setTimeout(() => {
@@ -156,109 +158,115 @@ export const PromptFactorEditor: React.FC<PromptFactorEditorProps> = ({
   };
 
   return (
-    <div className="space-y-4 max-h-[calc(100vh-20rem)] overflow-y-auto px-4">
-      <div className="flex justify-between items-center">
-        <h3 className="text-lg font-semibold text-violet-800">Prompt Factors</h3>
-        <button
-          onClick={() => setShowPromptsModal(true)}
-          className="px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors"
-        >
-          See Prompts
-        </button>
-      </div>
-
-      <div className="flex space-x-2">
-        <input
-          ref={newFactorInputRef}
-          type="text"
-          value={newFactorName}
-          onChange={(e) => setNewFactorName(e.target.value)}
-          placeholder="New Factor Name"
-          className="flex-1 px-3 py-2 border border-violet-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500"
-        />
-        <button
-          onClick={addFactor}
-          disabled={!newFactorName.trim()}
-          className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 disabled:bg-gray-400 transition-colors"
-        >
-          Add Factor
-        </button>
-      </div>
-
-      <div className="space-y-4">
-        {factors.map((factor, index) => (
-          <div
-            key={factor.name}
-            className="border border-violet-200 rounded-lg overflow-hidden shadow-sm"
+    <div className="h-full flex flex-col">
+      {/* Fixed header section */}
+      <div className="flex-shrink-0 space-y-4 px-4 pb-4">
+        <div className="flex justify-between items-center">
+          <h3 className="text-lg font-semibold text-violet-800">Prompt Factors</h3>
+          <button
+            onClick={() => setShowPromptsModal(true)}
+            className="px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors"
           >
+            See Prompts
+          </button>
+        </div>
+
+        <div className="flex space-x-2">
+          <input
+            ref={newFactorInputRef}
+            type="text"
+            value={newFactorName}
+            onChange={(e) => setNewFactorName(e.target.value)}
+            placeholder="New Factor Name"
+            className="flex-1 px-3 py-2 border border-violet-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500"
+          />
+          <button
+            onClick={addFactor}
+            disabled={!newFactorName.trim()}
+            className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 disabled:bg-gray-400 transition-colors"
+          >
+            Add Factor
+          </button>
+        </div>
+      </div>
+
+      {/* Scrollable factors list */}
+      <div className="overflow-y-auto px-4 pb-4 flex-grow" style={{ maxHeight: 'calc(100% - 120px)' }}>
+        <div className="space-y-4">
+          {factors.map((factor, index) => (
             <div
-              className="flex items-center justify-between p-4 bg-violet-50 cursor-pointer"
-              onClick={() => toggleFactor(factor.name)}
+              key={factor.name}
+              className="border border-violet-200 rounded-lg overflow-hidden shadow-sm"
             >
-              <div className="flex-1">
-                <div className="flex items-center gap-2">
-                  <h4 className="font-medium text-violet-800">{factor.name}</h4>
-                  <span className="text-sm text-violet-500">
-                    ({factor.levels.length} levels: {factor.levels.map(opt => opt.name).join(', ')})
+              <div
+                className="flex items-center justify-between p-4 bg-violet-50 cursor-pointer"
+                onClick={() => toggleFactor(factor.name)}
+              >
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 overflow-hidden">
+                    <h4 className="font-medium text-violet-800 truncate">{factor.name}</h4>
+                    <span className="text-sm text-violet-500 whitespace-nowrap">
+                      ({factor.levels.length} levels)
+                    </span>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-2 flex-shrink-0">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleAddEmptyLevel(index);
+                    }}
+                    className="px-3 py-1 text-sm bg-teal-500 text-white rounded hover:bg-teal-600 transition-colors"
+                  >
+                    Add Empty Level
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      deleteFactor(factor.name);
+                    }}
+                    className="p-1 text-red-600 hover:bg-red-100 rounded transition-colors"
+                  >
+                    Delete
+                  </button>
+                  <span className="text-violet-500">
+                    {expandedFactors.includes(factor.name) ? '▼' : '▶'}
                   </span>
                 </div>
               </div>
-              <div className="flex items-center space-x-2">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleAddEmptyLevel(index);
-                  }}
-                  className="px-3 py-1 text-sm bg-teal-500 text-white rounded hover:bg-teal-600 transition-colors"
-                >
-                  Add Empty Level
-                </button>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    deleteFactor(factor.name);
-                  }}
-                  className="p-1 text-red-600 hover:bg-red-100 rounded transition-colors"
-                >
-                  Delete
-                </button>
-                <span className="text-violet-500">
-                  {expandedFactors.includes(factor.name) ? '▼' : '▶'}
-                </span>
-              </div>
-            </div>
 
-            {expandedFactors.includes(factor.name) && (
-              <div className="p-4 space-y-4">
-                <CategoryLevelForm
-                  factorName={factor.name}
-                  onSubmit={(name, prompt) => addLevel(factor.name, name, prompt)}
-                  inputRef={(el) => (newLevelNameRefs.current[factor.name] = el)}
-                />
+              {expandedFactors.includes(factor.name) && (
+                <div className="p-4 space-y-4">
+                  <CategoryLevelForm
+                    factorName={factor.name}
+                    onSubmit={(name, prompt) => addLevel(factor.name, name, prompt)}
+                    inputRef={(el) => (newLevelNameRefs.current[factor.name] = el)}
+                  />
 
-                <div className="space-y-2 max-h-60 overflow-y-auto">
-                  {factor.levels.map(level => (
-                    <div
-                      key={level.name}
-                      className="flex items-start justify-between p-3 bg-violet-50 rounded border border-violet-100"
-                    >
-                      <div className="overflow-hidden">
-                        <h5 className="font-medium text-violet-800">{level.name}</h5>
-                        <p className="text-sm text-violet-600 break-words">{level.prompt}</p>
-                      </div>
-                      <button
-                        onClick={() => deleteLevel(factor.name, level.name)}
-                        className="p-1 text-red-600 hover:bg-red-100 rounded flex-shrink-0 ml-2"
+                  <div className="space-y-2 max-h-60 overflow-y-auto">
+                    {factor.levels.map(level => (
+                      <div
+                        key={level.name}
+                        className="flex items-start justify-between p-3 bg-violet-50 rounded border border-violet-100"
                       >
-                        Delete
-                      </button>
-                    </div>
-                  ))}
+                        <div className="overflow-hidden flex-grow">
+                          <h5 className="font-medium text-violet-800">{level.name}</h5>
+                          <p className="text-sm text-violet-600 break-words">{level.prompt}</p>
+                        </div>
+                        <button
+                          onClick={() => deleteLevel(factor.name, level.name)}
+                          className="p-1 text-red-600 hover:bg-red-100 rounded flex-shrink-0 ml-2"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )}
-          </div>
-        ))}
+              )}
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* Prompts Modal */}

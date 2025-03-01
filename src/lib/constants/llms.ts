@@ -337,7 +337,31 @@ export const models: LLMModel[] = [
     },
     {
         "provider": "groq",
-        "name": "llama-guard-3-8b",
+        "name": "llama3-8b-8192b",
+        "pricing": {
+            "perMillionTokensInput": 0.01,
+            "perMillionTokensOutput": 0.01
+        }
+    },
+    {
+        "provider": "groq",
+        "name": "mistral-saba-24b",
+        "pricing": {
+            "perMillionTokensInput": 0.01,
+            "perMillionTokensOutput": 0.01
+        }
+    },
+    {
+        "provider": "groq",
+        "name": "lama-3.2-3b-preview",
+        "pricing": {
+            "perMillionTokensInput": 0.01,
+            "perMillionTokensOutput": 0.01
+        }
+    },
+    {
+        "provider": "groq",
+        "name": "lama-3.2-1b-preview",
         "pricing": {
             "perMillionTokensInput": 0.01,
             "perMillionTokensOutput": 0.01
