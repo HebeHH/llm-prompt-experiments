@@ -129,15 +129,6 @@ export const PromptFactorEditor: React.FC<PromptFactorEditorProps> = ({
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
-                    handleAddOption(index);
-                  }}
-                  className="px-3 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600"
-                >
-                  Add Option
-                </button>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
                     handleAddEmptyOption(index);
                   }}
                   className="px-3 py-1 text-sm bg-gray-500 text-white rounded hover:bg-gray-600"

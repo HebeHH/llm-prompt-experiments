@@ -186,87 +186,83 @@ export default function Home() {
                 <div className="space-y-8">
                     {/* Create Experiment Panel */}
                     {(currentView === 'create' || showExperimentPanel) && (
-                        <div className="w-full">
-                            <div className="bg-white rounded-lg shadow">
-                                <div className="flex justify-between items-center p-6 border-b">
-                                    <h2 className="text-xl font-semibold">Create Experiment</h2>
-                                    {currentView === 'results' && (
-                                        <button
-                                            onClick={() => setShowExperimentPanel(false)}
-                                            className="text-gray-500 hover:text-gray-700"
-                                        >
-                                            <span className="sr-only">Close panel</span>
-                                            ×
-                                        </button>
-                                    )}
-                                </div>
-                                <div className="p-6">
-                                    <ExperimentCreator
-                                        onConfigChange={setConfig}
-                                        onRunAnalysis={handleRunAnalysis}
-                                        isRunning={isRunning}
-                                        onApiKeysChange={handleApiKeysChange}
-                                    />
-                                </div>
+                        <div className="bg-white rounded-lg shadow-lg flex flex-col h-[calc(100vh-12rem)]">
+                            <div className="flex items-center justify-between px-6 py-4 border-b border-violet-200 bg-violet-50">
+                                <h2 className="text-xl font-semibold text-gray-900">New Experiment</h2>
+                                {currentView === 'results' && (
+                                    <button
+                                        onClick={() => setShowExperimentPanel(false)}
+                                        className="text-violet-500 hover:text-violet-700"
+                                    >
+                                        <span className="sr-only">Close panel</span>
+                                        ×
+                                    </button>
+                                )}
                             </div>
+                            <ExperimentCreator
+                                onConfigChange={setConfig}
+                                onRunAnalysis={handleRunAnalysis}
+                                isRunning={isRunning}
+                                onApiKeysChange={handleApiKeysChange}
+                            />
                         </div>
                     )}
 
                     {/* Progress Panel */}
                     {currentView === 'progress' && progress && (
-                        <div className="w-full">
-                            <div className="bg-white rounded-lg shadow">
-                                <div className="p-6">
-                                    <h2 className="text-xl font-semibold mb-4">Analysis Progress</h2>
-                                    <div className="mb-6">
-                                        <div className="flex justify-between text-sm mb-2">
-                                            <span>Overall Progress:</span>
-                                            <span>
-                                                {progress.completedPrompts} / {progress.totalPrompts} prompts
-                                                {' '}({Math.round((progress.completedPrompts / progress.totalPrompts) * 100)}%)
-                                            </span>
-                                        </div>
-                                        <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
-                                            <div
-                                                className="h-full bg-blue-600 transition-all duration-500 ease-in-out"
-                                                style={{
-                                                    width: `${(progress.completedPrompts / progress.totalPrompts) * 100}%`
-                                                }}
-                                            />
-                                        </div>
+                        <div className="bg-white rounded-lg shadow-lg">
+                            <div className="flex items-center justify-between px-6 py-4 border-b border-violet-200 bg-violet-50">
+                                <h2 className="text-xl font-semibold text-gray-900">Analysis Progress</h2>
+                            </div>
+                            <div className="p-6">
+                                <div className="mb-6">
+                                    <div className="flex justify-between text-sm mb-2">
+                                        <span>Overall Progress:</span>
+                                        <span>
+                                            {progress.completedPrompts} / {progress.totalPrompts} prompts
+                                            {' '}({Math.round((progress.completedPrompts / progress.totalPrompts) * 100)}%)
+                                        </span>
                                     </div>
-                                    <div className="space-y-4">
-                                        {Object.entries(progress.modelProgress).map(([model, stats]) => (
-                                            <div key={model} className="space-y-2">
-                                                <div className="flex justify-between text-sm">
-                                                    <span>{model}:</span>
-                                                    <span>
-                                                        {stats.completed} / {stats.total} prompts
-                                                        {stats.failed > 0 && ` (${stats.failed} failed)`}
-                                                        {' '}({Math.round(((stats.completed + stats.failed) / stats.total) * 100)}%)
-                                                    </span>
-                                                </div>
-                                                <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                                                    <div className="flex h-full">
+                                    <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
+                                        <div
+                                            className="h-full bg-teal-600 transition-all duration-500 ease-in-out"
+                                            style={{
+                                                width: `${(progress.completedPrompts / progress.totalPrompts) * 100}%`
+                                            }}
+                                        />
+                                    </div>
+                                </div>
+                                <div className="space-y-4">
+                                    {Object.entries(progress.modelProgress).map(([model, stats]) => (
+                                        <div key={model} className="space-y-2">
+                                            <div className="flex justify-between text-sm">
+                                                <span>{model}:</span>
+                                                <span>
+                                                    {stats.completed} / {stats.total} prompts
+                                                    {stats.failed > 0 && ` (${stats.failed} failed)`}
+                                                    {' '}({Math.round(((stats.completed + stats.failed) / stats.total) * 100)}%)
+                                                </span>
+                                            </div>
+                                            <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                                                <div className="flex h-full">
+                                                    <div
+                                                        className="h-full bg-teal-600 transition-all duration-500 ease-in-out"
+                                                        style={{
+                                                            width: `${(stats.completed / stats.total) * 100}%`
+                                                        }}
+                                                    />
+                                                    {stats.failed > 0 && (
                                                         <div
-                                                            className="h-full bg-blue-600 transition-all duration-500 ease-in-out"
+                                                            className="h-full bg-red-500 transition-all duration-500 ease-in-out"
                                                             style={{
-                                                                width: `${(stats.completed / stats.total) * 100}%`
+                                                                width: `${(stats.failed / stats.total) * 100}%`
                                                             }}
                                                         />
-                                                        {stats.failed > 0 && (
-                                                            <div
-                                                                className="h-full bg-red-500 transition-all duration-500 ease-in-out"
-                                                                style={{
-                                                                    width: `${(stats.failed / stats.total) * 100}%`
-                                                                }}
-                                                            />
-                                                        )}
-                                                    </div>
+                                                    )}
                                                 </div>
                                             </div>
-                                        ))}
-                                    </div>
+                                        </div>
+                                    ))}
                                 </div>
                             </div>
                         </div>
@@ -274,14 +270,83 @@ export default function Home() {
 
                     {/* Configuration View and Results Panel */}
                     {currentView === 'results' && results && !showExperimentPanel && (
-                        <div className="w-full space-y-8">
+                        <div className="space-y-8">
                             {showConfigView && (
-                                <ExperimentConfigView
-                                    config={config}
-                                    onClose={() => setShowConfigView(false)}
-                                />
+                                <div className="bg-white rounded-lg shadow-lg">
+                                    <div className="flex items-center justify-between px-6 py-4 border-b border-violet-200 bg-violet-50">
+                                        <h2 className="text-xl font-semibold text-gray-900">Experiment Configuration</h2>
+                                        <button
+                                            onClick={() => setShowConfigView(false)}
+                                            className="text-violet-500 hover:text-violet-700"
+                                        >
+                                            <span className="sr-only">Close panel</span>
+                                            ×
+                                        </button>
+                                    </div>
+                                    <div className="p-6">
+                                        <div className="space-y-6">
+                                            <div>
+                                                <h4 className="font-medium mb-2">Selected Models</h4>
+                                                <ul className="list-disc list-inside space-y-1 text-gray-600">
+                                                    {config.models.map(model => (
+                                                        <li key={model.name}>{model.name} ({model.provider})</li>
+                                                    ))}
+                                                </ul>
+                                            </div>
+                                            <div>
+                                                <h4 className="font-medium mb-2">Prompt Factors</h4>
+                                                <div className="space-y-4">
+                                                    {config.promptFactors.map(factor => (
+                                                        <div key={factor.name} className="bg-gray-50 p-4 rounded-lg">
+                                                            <h5 className="font-medium mb-2">{factor.name}</h5>
+                                                            <ul className="list-disc list-inside space-y-1 text-gray-600">
+                                                                {factor.levels.map(level => (
+                                                                    <li key={level.name}>
+                                                                        {level.name}
+                                                                        {level.prompt && (
+                                                                            <span className="text-gray-500"> - {level.prompt}</span>
+                                                                        )}
+                                                                    </li>
+                                                                ))}
+                                                            </ul>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <h4 className="font-medium mb-2">Prompt Covariates</h4>
+                                                <ul className="list-decimal list-inside space-y-1 text-gray-600">
+                                                    {config.promptCovariates.map((variable, index) => (
+                                                        <li key={index} className="flex items-start">
+                                                            <span className="mr-2">{index + 1}.</span>
+                                                            <span className="flex-1">{variable}</span>
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            </div>
+                                            <div>
+                                                <h4 className="font-medium mb-2">Response Variables</h4>
+                                                <ul className="list-disc list-inside space-y-1 text-gray-600">
+                                                    {config.responseVariables.map(attr => (
+                                                        <li key={attr.name}>
+                                                            {attr.name}
+                                                            <span className="text-gray-500"> - {attr.description}</span>
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             )}
-                            <ResultsVisualization data={results} />
+                            <div className="bg-white rounded-lg shadow-lg">
+                                <div className="flex items-center justify-between px-6 py-4 border-b border-violet-200 bg-violet-50">
+                                    <h2 className="text-xl font-semibold text-gray-900">Results</h2>
+                                </div>
+                                <div className="p-6">
+                                    <ResultsVisualization data={results} />
+                                </div>
+                            </div>
                         </div>
                     )}
                 </div>
