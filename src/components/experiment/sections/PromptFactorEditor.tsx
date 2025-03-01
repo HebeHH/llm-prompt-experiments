@@ -142,7 +142,7 @@ export const PromptFactorEditor: React.FC<PromptFactorEditorProps> = ({
       const factorPrompts = combination.map(c => c.prompt);
       const combinationString = combination.map(c => `${c.factorName}: ${c.levelName}`).join(", ");
       
-      for (const covariate of promptCovariates) {
+      for (const covariate of (promptCovariates.length > 0 ? promptCovariates : ["PROMPT COVARIATE TEXT HERE."])) {
         const fullPrompt = promptFunction(factorPrompts, covariate);
         allPrompts.push({
           combination: combinationString,
