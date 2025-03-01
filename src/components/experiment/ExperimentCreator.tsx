@@ -130,6 +130,64 @@ export const ExperimentCreator: React.FC<ExperimentCreatorProps> = ({
   
   const canGoPrev = currentStepIndex > 0;
 
+  // Prepare props for each component
+  const getComponentProps = (stepId: string) => {
+    const baseProps = {
+      onChange: (value: any) => {
+        const updates: Partial<AnalysisConfig> = {};
+        if (stepId === 'models') updates.models = value;
+        if (stepId === 'factors') updates.promptFactors = value;
+        if (stepId === 'covariates') updates.promptCovariates = value;
+        if (stepId === 'response') updates.responseVariables = value;
+        handleConfigUpdate(updates);
+      },
+    };
+
+    // Add specific props for each component
+    switch (stepId) {
+      case 'setup':
+        return {
+          ...baseProps,
+          onApiKeysChange: handleApiKeysUpdate,
+          initialApiKeys: defaultApiKeys,
+        };
+      case 'models':
+        return {
+          ...baseProps,
+          selectedModels: config.models,
+          availableApiKeys: apiKeys,
+        };
+      case 'factors':
+        return {
+          ...baseProps,
+          factors: config.promptFactors,
+          promptCovariates: config.promptCovariates,
+          promptFunction: config.promptFunction,
+        };
+      case 'covariates':
+        return {
+          ...baseProps,
+          variables: config.promptCovariates,
+          promptFactors: config.promptFactors,
+          promptFunction: config.promptFunction,
+        };
+      case 'response':
+        return {
+          ...baseProps,
+          selectedAttributes: config.responseVariables,
+        };
+      case 'pricing':
+        return {
+          ...baseProps,
+          models: config.models,
+          promptFactors: config.promptFactors,
+          promptCovariates: config.promptCovariates,
+        };
+      default:
+        return baseProps;
+    }
+  };
+
   return (
     <div className="flex flex-col flex-1">
       {/* Header */}
@@ -152,12 +210,12 @@ export const ExperimentCreator: React.FC<ExperimentCreatorProps> = ({
 
       {/* Tabs */}
       <div className="px-6 border-b border-violet-200">
-        <div className="flex space-x-1">
+        <div className="flex space-x-1 overflow-x-auto hide-scrollbar">
           {steps.map((step, index) => (
             <button
               key={step.id}
               onClick={() => setCurrentStepIndex(index)}
-              className={`py-3 px-4 -mb-px relative ${
+              className={`py-3 px-4 -mb-px relative whitespace-nowrap ${
                 index === currentStepIndex
                   ? 'text-teal-600 font-medium'
                   : 'text-violet-600 hover:text-violet-800'
@@ -173,28 +231,12 @@ export const ExperimentCreator: React.FC<ExperimentCreatorProps> = ({
       </div>
 
       {/* Content Area */}
-      <div className="flex-1 overflow-y-auto p-6">
-        <div className="h-full">
-          {React.createElement(currentStep.component, {
-            selectedModels: config.models,
-            factors: config.promptFactors,
-            variables: config.promptCovariates,
-            selectedAttributes: config.responseVariables,
-            models: config.models,
-            promptFactors: config.promptFactors,
-            promptCovariates: config.promptCovariates,
-            onApiKeysChange: handleApiKeysUpdate,
-            initialApiKeys: defaultApiKeys,
-            onChange: (value: any) => {
-              const updates: Partial<AnalysisConfig> = {};
-              if (currentStep.id === 'models') updates.models = value;
-              if (currentStep.id === 'factors') updates.promptFactors = value;
-              if (currentStep.id === 'covariates') updates.promptCovariates = value;
-              if (currentStep.id === 'response') updates.responseVariables = value;
-              handleConfigUpdate(updates);
-            },
-            availableApiKeys: apiKeys
-          })}
+      <div className="flex-1 overflow-hidden p-6">
+        <div className="h-full overflow-hidden">
+          {React.createElement(
+            currentStep.component, 
+            getComponentProps(currentStep.id)
+          )}
         </div>
       </div>
 

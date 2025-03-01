@@ -184,7 +184,7 @@ export default function Home() {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex justify-between items-center mb-8">
                     <h1 className="text-3xl font-bold text-white">
-                        AI Response Analysis Dashboard
+                        Prompting Experiments
                     </h1>
                     {currentView === 'results' && (
                         <div className="flex gap-4">
