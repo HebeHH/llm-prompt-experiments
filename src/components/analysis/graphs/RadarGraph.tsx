@@ -128,7 +128,10 @@ export const RadarGraph: React.FC<GraphProps> = (props) => {
                             );
                         }}
                     />
-                    <Legend />
+                    <Legend 
+                        verticalAlign="top"
+                        height={36}
+                    />
                     {categories.map((category, index) => (
                         <Radar
                             key={category}

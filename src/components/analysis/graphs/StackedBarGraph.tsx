@@ -118,7 +118,7 @@ export const StackedBarGraph: React.FC<GraphProps> = (props) => {
                         }}
                     />
                     <Tooltip />
-                    <Legend />
+                    <Legend verticalAlign="top" height={36} />
                     {colorCategories.map((category, index) => (
                         <Bar
                             key={category}
