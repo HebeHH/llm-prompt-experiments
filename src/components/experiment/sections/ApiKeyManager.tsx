@@ -27,6 +27,10 @@ export const ApiKeyManager: React.FC<ApiKeyManagerProps> = ({
         openai: {
             value: process.env.NEXT_PUBLIC_OPENAI_API_KEY || initialApiKeys?.openai || '',
             isFromEnv: !!process.env.NEXT_PUBLIC_OPENAI_API_KEY
+        },
+        groq: {
+            value: process.env.NEXT_PUBLIC_GROQ_API_KEY || initialApiKeys?.groq || '',
+            isFromEnv: !!process.env.NEXT_PUBLIC_GROQ_API_KEY
         }
     }));
 

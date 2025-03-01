@@ -12,6 +12,7 @@
     "@anthropic-ai/sdk": "^0.36.3",
     "@google/generative-ai": "^0.22.0",
     "@heroicons/react": "^2.2.0",
+    "groq-sdk": "^0.15.0",
     "next": "15.1.7",
     "openai": "^4.85.4",
     "react": "^19.0.0",

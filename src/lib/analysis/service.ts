@@ -1,5 +1,5 @@
 import { AnalysisConfig, AnalysisData, AnalysisResult } from '@/lib/types/analysis';
-import { LLMProviderFactory } from '@/lib/llm/factory';
+import { LLMProviderFactory } from '@/lib/constants/llms';
 
 export interface AnalysisProgress {
     completedPrompts: number;

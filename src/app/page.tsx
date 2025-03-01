@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { ExperimentCreator } from '@/components/experiment/ExperimentCreator';
 import { ResultsVisualization } from '@/components/analysis/ResultsVisualization';
 import { AnalysisService, AnalysisProgress } from '@/lib/analysis/service';
-import { LLMProviderFactory } from '@/lib/llm/factory';
+import { LLMProviderFactory } from '@/lib/constants/llms';
 import { AnalysisData, AnalysisConfig } from '@/lib/types/analysis';
 import { LLMProvider } from '@/lib/types/llm';
 
@@ -90,7 +90,8 @@ export default function Home() {
     const [apiKeys, setApiKeys] = useState<Record<LLMProvider, string>>({
         anthropic: process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY || '',
         google: process.env.NEXT_PUBLIC_GOOGLE_API_KEY || '',
-        openai: process.env.NEXT_PUBLIC_OPENAI_API_KEY || ''
+        openai: process.env.NEXT_PUBLIC_OPENAI_API_KEY || '',
+        groq: process.env.NEXT_PUBLIC_GROQ_API_KEY || ''
     });
     const [config, setConfig] = useState<AnalysisConfig>({
         name: 'New Experiment',
@@ -125,6 +126,7 @@ export default function Home() {
                 anthropicApiKey: apiKeys.anthropic,
                 googleApiKey: apiKeys.google,
                 openaiApiKey: apiKeys.openai,
+                groqApiKey: apiKeys.groq
             });
 
             const analysisService = new AnalysisService(config, (progress) => {

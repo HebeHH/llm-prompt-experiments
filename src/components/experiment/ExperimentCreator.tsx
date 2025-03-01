@@ -19,7 +19,8 @@ interface ExperimentCreatorProps {
 const defaultApiKeys: Record<LLMProvider, string> = {
   anthropic: process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY || '',
   google: process.env.NEXT_PUBLIC_GOOGLE_API_KEY || '',
-  openai: process.env.NEXT_PUBLIC_OPENAI_API_KEY || ''
+  openai: process.env.NEXT_PUBLIC_OPENAI_API_KEY || '',
+  groq: process.env.NEXT_PUBLIC_GROQ_API_KEY || ''
 };
 
 export const ExperimentCreator: React.FC<ExperimentCreatorProps> = ({

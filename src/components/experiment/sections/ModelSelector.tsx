@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { LLMModel, LLMProvider } from '@/lib/types/llm';
-import { models } from '@/lib/constants/models';
+import { models } from '@/lib/constants/llms';
 
 interface ModelSelectorProps {
   selectedModels: LLMModel[];
