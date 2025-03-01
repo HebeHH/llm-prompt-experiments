@@ -51,14 +51,14 @@ export const AnalysisSelector: React.FC<AnalysisSelectorProps> = ({
             </div>
 
             <div className="mb-6">
-                <h3 className="text-lg font-semibold mb-2">Prompt Categories</h3>
-                {config.promptCategories.map(category => (
-                    <div key={category.name} className="mb-4">
-                        <h4 className="font-medium text-gray-700 mb-2">{category.name}</h4>
+                <h3 className="text-lg font-semibold mb-2">Prompt Factors</h3>
+                {config.promptFactors.map(factors => (
+                    <div key={factors.name} className="mb-4">
+                        <h4 className="font-medium text-gray-700 mb-2">{factors.name}</h4>
                         <div className="grid grid-cols-2 gap-2">
-                            {category.categories.map(cat => (
-                                <div key={cat.name} className="text-sm text-gray-600">
-                                    {cat.name}
+                            {factors.levels.map(levels => (
+                                <div key={levels.name} className="text-sm text-gray-600">
+                                    {levels.name}
                                 </div>
                             ))}
                         </div>
@@ -69,7 +69,7 @@ export const AnalysisSelector: React.FC<AnalysisSelectorProps> = ({
             <div className="mb-6">
                 <h3 className="text-lg font-semibold mb-2">Sample Questions</h3>
                 <div className="text-sm text-gray-600 space-y-1">
-                    {config.promptVariables.map((variable, index) => (
+                    {config.promptCovariates.map((variable, index) => (
                         <div key={index}>{variable}</div>
                     ))}
                 </div>

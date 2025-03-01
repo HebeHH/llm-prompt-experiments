@@ -36,17 +36,17 @@ const ExperimentConfigView: React.FC<ExperimentConfigViewProps> = ({ config, onC
                     </ul>
                 </div>
                 <div>
-                    <h4 className="font-medium mb-2">Prompt Categories</h4>
+                    <h4 className="font-medium mb-2">Prompt Factors</h4>
                     <div className="space-y-4">
-                        {config.promptCategories.map(category => (
-                            <div key={category.name} className="bg-gray-50 p-4 rounded-lg">
-                                <h5 className="font-medium mb-2">{category.name}</h5>
+                        {config.promptFactors.map(factor => (
+                            <div key={factor.name} className="bg-gray-50 p-4 rounded-lg">
+                                <h5 className="font-medium mb-2">{factor.name}</h5>
                                 <ul className="list-disc list-inside space-y-1 text-gray-600">
-                                    {category.categories.map(option => (
-                                        <li key={option.name}>
-                                            {option.name}
-                                            {option.prompt && (
-                                                <span className="text-gray-500"> - {option.prompt}</span>
+                                    {factor.levels.map(level => (
+                                        <li key={level.name}>
+                                            {level.name}
+                                            {level.prompt && (
+                                                <span className="text-gray-500"> - {level.prompt}</span>
                                             )}
                                         </li>
                                     ))}
@@ -56,9 +56,9 @@ const ExperimentConfigView: React.FC<ExperimentConfigViewProps> = ({ config, onC
                     </div>
                 </div>
                 <div>
-                    <h4 className="font-medium mb-2">Prompt Variables</h4>
+                    <h4 className="font-medium mb-2">Prompt Covariates</h4>
                     <ul className="list-decimal list-inside space-y-1 text-gray-600">
-                        {config.promptVariables.map((variable, index) => (
+                        {config.promptCovariates.map((variable, index) => (
                             <li key={index} className="flex items-start">
                                 <span className="mr-2">{index + 1}.</span>
                                 <span className="flex-1">{variable}</span>
@@ -67,9 +67,9 @@ const ExperimentConfigView: React.FC<ExperimentConfigViewProps> = ({ config, onC
                     </ul>
                 </div>
                 <div>
-                    <h4 className="font-medium mb-2">Response Attributes</h4>
+                    <h4 className="font-medium mb-2">Response Variables</h4>
                     <ul className="list-disc list-inside space-y-1 text-gray-600">
-                        {config.responseAttributes.map(attr => (
+                        {config.responseVariables.map(attr => (
                             <li key={attr.name}>
                                 {attr.name}
                                 <span className="text-gray-500"> - {attr.description}</span>
@@ -97,11 +97,11 @@ export default function Home() {
         name: 'New Experiment',
         description: 'A new experiment configuration',
         models: [],
-        promptCategories: [],
-        promptVariables: [],
-        responseAttributes: [],
-        promptFunction: (categories: string[], variable: string) => {
-            return `${categories.join("\n")}\n${variable}`;
+        promptFactors: [],
+        promptCovariates: [],
+        responseVariables: [],
+        promptFunction: (promptFactors: string[], variable: string) => {
+            return `${promptFactors.join("\n")}\n${variable}`;
         },
     });
     const [results, setResults] = useState<AnalysisData | null>(null);

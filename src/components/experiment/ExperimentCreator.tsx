@@ -1,8 +1,8 @@
 import React, { useState, useMemo, useCallback } from 'react';
-import { AnalysisConfig, PromptCategory, ResponseAttribute } from '@/lib/types/analysis';
+import { AnalysisConfig, PromptFactor, ResponseVariable } from '@/lib/types/analysis';
 import { LLMModel, LLMProvider } from '@/lib/types/llm';
 import { ModelSelector } from '@/components/experiment/sections/ModelSelector';
-import { PromptCategoryEditor } from '@/components/experiment/sections/PromptCategoryEditor';
+import { PromptFactorEditor } from '@/components/experiment/sections/PromptCategoryEditor';
 import { PromptVariableEditor } from '@/components/experiment/sections/PromptVariableEditor';
 import { ResultAttributeSelector } from '@/components/experiment/sections/ResultAttributeSelector';
 import { PricingPredictor } from '@/components/experiment/sections/PricingPredictor';
@@ -33,11 +33,11 @@ export const ExperimentCreator: React.FC<ExperimentCreatorProps> = ({
     name: '',
     description: '',
     models: [],
-    promptCategories: [],
-    promptVariables: [],
-    responseAttributes: [...resultAttributes],
-    promptFunction: (categories: string[], variable: string) => {
-      return `${categories.join("\n")}\n${variable}`;
+    promptFactors: [],
+    promptCovariates: [],
+    responseVariables: [...resultAttributes],
+    promptFunction: (factors: string[], variable: string) => {
+      return `${factors.join("\n")}\n${variable}`;
     },
   });
 
@@ -62,16 +62,16 @@ export const ExperimentCreator: React.FC<ExperimentCreatorProps> = ({
     if (!config.models.some(model => !!apiKeys[model.provider])) return false;
 
     // Must have at least one prompt variable
-    if (config.promptVariables.length === 0) return false;
+    if (config.promptCovariates.length === 0) return false;
 
-    // Must have at least one prompt category
-    if (config.promptCategories.length === 0) return false;
+    // Must have at least one prompt factors
+    if (config.promptFactors.length === 0) return false;
 
-    // All prompt categories must have at least one option
-    if (config.promptCategories.some(cat => cat.categories.length === 0)) return false;
+    // All prompt factors must have at least one level
+    if (config.promptFactors.some(factor => factor.levels.length === 0)) return false;
 
     // Must have at least one result attribute
-    if (config.responseAttributes.length === 0) return false;
+    if (config.responseVariables.length === 0) return false;
 
     return true;
   }, [config, apiKeys]);
@@ -79,12 +79,12 @@ export const ExperimentCreator: React.FC<ExperimentCreatorProps> = ({
   const getValidationMessage = () => {
     if (config.models.length === 0) return "Select at least one model";
     if (!config.models.some(model => !!apiKeys[model.provider])) return "Selected models require API keys";
-    if (config.promptVariables.length === 0) return "Add at least one prompt variable";
-    if (config.promptCategories.length === 0) return "Add at least one prompt category";
-    if (config.promptCategories.some(cat => cat.categories.length === 0)) {
+    if (config.promptCovariates.length === 0) return "Add at least one prompt variable";
+    if (config.promptFactors.length === 0) return "Add at least one prompt category";
+    if (config.promptFactors.some(cat => cat.levels.length === 0)) {
       return "Each prompt category must have at least one option";
     }
-    if (config.responseAttributes.length === 0) return "Select at least one result attribute";
+    if (config.responseVariables.length === 0) return "Select at least one result attribute";
     return "";
   };
 
@@ -119,25 +119,25 @@ export const ExperimentCreator: React.FC<ExperimentCreatorProps> = ({
           availableApiKeys={apiKeys}
         />
 
-        <PromptCategoryEditor
-          categories={config.promptCategories}
-          onChange={(promptCategories: PromptCategory[]) => handleConfigUpdate({ promptCategories })}
+        <PromptFactorEditor
+          factors={config.promptFactors}
+          onChange={(promptFactors: PromptFactor[]) => handleConfigUpdate({ promptFactors: promptFactors })}
         />
 
         <PromptVariableEditor
-          variables={config.promptVariables}
-          onChange={(promptVariables: string[]) => handleConfigUpdate({ promptVariables })}
+          variables={config.promptCovariates}
+          onChange={(promptCovariates: string[]) => handleConfigUpdate({ promptCovariates: promptCovariates })}
         />
 
         <ResultAttributeSelector
-          selectedAttributes={config.responseAttributes}
-          onChange={(responseAttributes: ResponseAttribute[]) => handleConfigUpdate({ responseAttributes })}
+          selectedAttributes={config.responseVariables}
+          onChange={(responseAttributes: ResponseVariable[]) => handleConfigUpdate({ responseVariables: responseAttributes })}
         />
 
         <PricingPredictor
           models={config.models}
-          promptCategories={config.promptCategories}
-          promptVariables={config.promptVariables}
+          promptFactors={config.promptFactors}
+          promptCovariates={config.promptCovariates}
         />
 
         <div className="flex justify-between items-center">

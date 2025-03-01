@@ -123,13 +123,13 @@ export const BoxPlotGraph: React.FC<GraphProps> = (props) => {
                 if (config.xAxis.name === 'model') {
                     key = result.llmResponse.model.name;
                 } else {
-                    key = result.categories[config.xAxis.name] || 'default';
+                    key = result.factors[config.xAxis.name] || 'default';
                 }
 
                 if (!groupedData[key]) {
                     groupedData[key] = [];
                 }
-                groupedData[key].push(Number(result.attributes[config.yAxis.name]));
+                groupedData[key].push(Number(result.responseVariables[config.yAxis.name]));
             }
         });
 

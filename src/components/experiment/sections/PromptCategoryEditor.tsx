@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
-import { PromptCategory } from '@/lib/types/analysis';
+import { PromptFactor } from '@/lib/types/analysis';
 
-interface PromptCategoryEditorProps {
-  categories: PromptCategory[];
-  onChange: (categories: PromptCategory[]) => void;
+interface PromptFactorEditorProps {
+  factors: PromptFactor[];
+  onChange: (categories: PromptFactor[]) => void;
 }
 
-export const PromptCategoryEditor: React.FC<PromptCategoryEditorProps> = ({
-  categories,
+export const PromptFactorEditor: React.FC<PromptFactorEditorProps> = ({
+  factors: categories,
   onChange,
 }) => {
   const [newCategoryName, setNewCategoryName] = useState('');
@@ -27,7 +27,7 @@ export const PromptCategoryEditor: React.FC<PromptCategoryEditorProps> = ({
       ...categories,
       {
         name: newCategoryName,
-        categories: [],
+        levels: [],
       },
     ]);
     setNewCategoryName('');
@@ -45,8 +45,8 @@ export const PromptCategoryEditor: React.FC<PromptCategoryEditorProps> = ({
         cat.name === categoryName
           ? {
               ...cat,
-              categories: [
-                ...cat.categories,
+              levels: [
+                ...cat.levels,
                 { name: optionName, prompt: optionPrompt },
               ],
             }
@@ -61,7 +61,7 @@ export const PromptCategoryEditor: React.FC<PromptCategoryEditorProps> = ({
         cat.name === categoryName
           ? {
               ...cat,
-              categories: cat.categories.filter(opt => opt.name !== optionName),
+              levels: cat.levels.filter(opt => opt.name !== optionName),
             }
           : cat
       )
@@ -70,7 +70,7 @@ export const PromptCategoryEditor: React.FC<PromptCategoryEditorProps> = ({
 
   const handleAddOption = (categoryIndex: number) => {
     const newCategories = [...categories];
-    newCategories[categoryIndex].categories.push({
+    newCategories[categoryIndex].levels.push({
       name: 'New Option',
       prompt: ''
     });
@@ -79,7 +79,7 @@ export const PromptCategoryEditor: React.FC<PromptCategoryEditorProps> = ({
 
   const handleAddEmptyOption = (categoryIndex: number) => {
     const newCategories = [...categories];
-    newCategories[categoryIndex].categories.push({
+    newCategories[categoryIndex].levels.push({
       name: 'Empty',
       prompt: ''
     });
@@ -121,7 +121,7 @@ export const PromptCategoryEditor: React.FC<PromptCategoryEditorProps> = ({
                 <div className="flex items-center gap-2">
                   <h4 className="font-medium">{category.name}</h4>
                   <span className="text-sm text-gray-500">
-                    ({category.categories.length} options: {category.categories.map(opt => opt.name).join(', ')})
+                    ({category.levels.length} options: {category.levels.map(opt => opt.name).join(', ')})
                   </span>
                 </div>
               </div>
@@ -166,7 +166,7 @@ export const PromptCategoryEditor: React.FC<PromptCategoryEditorProps> = ({
                 />
 
                 <div className="space-y-2">
-                  {category.categories.map(option => (
+                  {category.levels.map(option => (
                     <div
                       key={option.name}
                       className="flex items-start justify-between p-3 bg-gray-50 rounded"

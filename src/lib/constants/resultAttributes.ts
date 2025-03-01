@@ -1,6 +1,6 @@
-import { ResponseAttribute } from '@/lib/types/analysis';
+import { ResponseVariable } from '@/lib/types/analysis';
 
-export const resultAttributes: ResponseAttribute[] = [
+export const resultAttributes: ResponseVariable[] = [
   {
     name: 'Word Count',
     description: 'Counts the number of words in the response',

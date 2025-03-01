@@ -39,14 +39,14 @@ export const StackedBarGraph: React.FC<GraphProps> = (props) => {
             if (stackedConfig.xAxis.name === 'model') {
                 xKey = result.llmResponse.model.name;
             } else {
-                xKey = result.categories[stackedConfig.xAxis.name] || 'default';
+                xKey = result.factors[stackedConfig.xAxis.name] || 'default';
             }
 
             let colorKey = '';
             if (stackedConfig.colorAxis.name === 'model') {
                 colorKey = result.llmResponse.model.name;
             } else {
-                colorKey = result.categories[stackedConfig.colorAxis.name] || 'default';
+                colorKey = result.factors[stackedConfig.colorAxis.name] || 'default';
             }
 
             if (!groupedData[xKey]) {
@@ -56,7 +56,7 @@ export const StackedBarGraph: React.FC<GraphProps> = (props) => {
                 groupedData[xKey][colorKey] = [];
             }
 
-            const value = result.attributes[stackedConfig.yAxis.name];
+            const value = result.responseVariables[stackedConfig.yAxis.name];
             if (typeof value === 'number') {
                 groupedData[xKey][colorKey].push(value);
             }
@@ -82,7 +82,7 @@ export const StackedBarGraph: React.FC<GraphProps> = (props) => {
             if (stackedConfig.colorAxis.name === 'model') {
                 colorKey = result.llmResponse.model.name;
             } else {
-                colorKey = result.categories[stackedConfig.colorAxis.name] || 'default';
+                colorKey = result.factors[stackedConfig.colorAxis.name] || 'default';
             }
             categories.add(colorKey);
         });

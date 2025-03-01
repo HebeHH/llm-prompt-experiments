@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { AnalysisData } from '@/lib/types/analysis';
+import { AnalysisConfig, AnalysisData } from '@/lib/types/analysis';
 import { 
     GraphConfig, 
     GraphType, 
@@ -44,21 +44,21 @@ const AddChartModal: React.FC<{
                         className="w-full p-4 text-left border rounded hover:bg-gray-50"
                     >
                         <div className="font-medium">Bar Chart</div>
-                        <div className="text-sm text-gray-500">Compare values across categories</div>
+                        <div className="text-sm text-gray-500">Compare values across factors</div>
                     </button>
                     <button
                         onClick={() => { onAdd('stackedBar'); onClose(); }}
                         className="w-full p-4 text-left border rounded hover:bg-gray-50"
                     >
                         <div className="font-medium">Stacked Bar Chart</div>
-                        <div className="text-sm text-gray-500">Compare values across categories with stacking</div>
+                        <div className="text-sm text-gray-500">Compare values across factors with stacking</div>
                     </button>
                     <button
                         onClick={() => { onAdd('groupedBar'); onClose(); }}
                         className="w-full p-4 text-left border rounded hover:bg-gray-50"
                     >
                         <div className="font-medium">Grouped Bar Chart</div>
-                        <div className="text-sm text-gray-500">Compare values across categories side by side</div>
+                        <div className="text-sm text-gray-500">Compare values across factors side by side</div>
                     </button>
                     <button
                         onClick={() => { onAdd('radar'); onClose(); }}
@@ -146,12 +146,12 @@ export const ResultsVisualization: React.FC<ResultsVisualizationProps> = ({ data
             } else if (sortConfig.column === 'response') {
                 aValue = a.llmResponse.response;
                 bValue = b.llmResponse.response;
-            } else if (data.config.responseAttributes.some(attr => attr.name === sortConfig.column)) {
-                aValue = a.attributes[sortConfig.column];
-                bValue = b.attributes[sortConfig.column];
+            } else if (data.config.responseVariables.some(attr => attr.name === sortConfig.column)) {
+                aValue = a.responseVariables[sortConfig.column];
+                bValue = b.responseVariables[sortConfig.column];
             } else {
-                aValue = a.categories[sortConfig.column] || 'default';
-                bValue = b.categories[sortConfig.column] || 'default';
+                aValue = a.factors[sortConfig.column] || 'default';
+                bValue = b.factors[sortConfig.column] || 'default';
             }
 
             if (aValue === bValue) return 0;
@@ -249,19 +249,19 @@ export const ResultsVisualization: React.FC<ResultsVisualizationProps> = ({ data
         const headers = [
             'Model',
             'Prompt ID',
-            ...data.config.promptCategories.map(cat => cat.name),
-            ...data.config.responseAttributes.map(attr => attr.name)
+            ...data.config.promptFactors.map(cat => cat.name),
+            ...data.config.responseVariables.map(attr => attr.name)
         ];
         
         // Data rows
         const rows = data.results.map(result => [
             result.llmResponse.model.name,
             (result.promptVariableIndex + 1).toString(),
-            ...data.config.promptCategories.map(category => 
-                result.categories[category.name] || 'default'
+            ...data.config.promptFactors.map(factor => 
+                result.factors[factor.name] || 'default'
             ),
-            ...data.config.responseAttributes.map(attr => {
-                const value = result.attributes[attr.name];
+            ...data.config.responseVariables.map(attr => {
+                const value = result.responseVariables[attr.name];
                 return typeof value === 'number' ? value.toFixed(3) : value;
             })
         ]);
@@ -281,15 +281,15 @@ export const ResultsVisualization: React.FC<ResultsVisualizationProps> = ({ data
                 name: model.name,
                 provider: model.provider
             })),
-            promptCategories: data.config.promptCategories.map(category => ({
-                name: category.name,
-                categories: category.categories.map(cat => ({
-                    name: cat.name,
-                    prompt: cat.prompt
+            promptFactors: data.config.promptFactors.map(factor => ({
+                name: factor.name,
+                levels: factor.levels.map(level => ({
+                    name: level.name,
+                    prompt: level.prompt
                 }))
             })),
-            promptVariables: data.config.promptVariables,
-            responseAttributes: data.config.responseAttributes
+            promptCovariates: data.config.promptCovariates,
+            responseVariables: data.config.responseVariables
         };
 
         return {
@@ -442,15 +442,15 @@ export const ResultsVisualization: React.FC<ResultsVisualizationProps> = ({ data
                                             )}
                                         </div>
                                     </th>
-                                    {data.config.promptCategories.map(category => (
+                                    {data.config.promptFactors.map(factor => (
                                         <th 
-                                            key={category.name}
+                                            key={factor.name}
                                             className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                                            onClick={() => handleSort(category.name)}
+                                            onClick={() => handleSort(factor.name)}
                                         >
                                             <div className="flex items-center">
-                                                {category.name}
-                                                {sortConfig?.column === category.name && (
+                                                {factor.name}
+                                                {sortConfig?.column === factor.name && (
                                                     <span className="ml-1">
                                                         {sortConfig.direction === 'asc' ? '▲' : '▼'}
                                                     </span>
@@ -458,7 +458,7 @@ export const ResultsVisualization: React.FC<ResultsVisualizationProps> = ({ data
                                             </div>
                                         </th>
                                     ))}
-                                    {data.config.responseAttributes.map(attr => (
+                                    {data.config.responseVariables.map(attr => (
                                         <th 
                                             key={attr.name}
                                             className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
@@ -498,16 +498,16 @@ export const ResultsVisualization: React.FC<ResultsVisualizationProps> = ({ data
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                             {result.promptVariableIndex + 1}
                                         </td>
-                                        {data.config.promptCategories.map(category => (
-                                            <td key={category.name} className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                {result.categories[category.name] || 'default'}
+                                        {data.config.promptFactors.map(factor => (
+                                            <td key={factor.name} className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                {result.factors[factor.name] || 'default'}
                                             </td>
                                         ))}
-                                        {data.config.responseAttributes.map(attr => (
+                                        {data.config.responseVariables.map(attr => (
                                             <td key={attr.name} className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                {typeof result.attributes[attr.name] === 'number'
-                                                    ? (result.attributes[attr.name] as number).toFixed(3)
-                                                    : result.attributes[attr.name]}
+                                                {typeof result.responseVariables[attr.name] === 'number'
+                                                    ? (result.responseVariables[attr.name] as number).toFixed(3)
+                                                    : result.responseVariables[attr.name]}
                                             </td>
                                         ))}
                                         <td className="px-6 py-4 text-sm text-gray-900 max-w-md truncate">

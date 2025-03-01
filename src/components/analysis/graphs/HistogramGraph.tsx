@@ -40,7 +40,7 @@ export const HistogramGraph: React.FC<GraphProps> = (props) => {
     const chartData = useMemo(() => {
         // Get all values for the y-axis
         const allValues = data.results
-            .map(r => r.attributes[histogramConfig.yAxis.name])
+            .map(r => r.responseVariables[histogramConfig.yAxis.name])
             .filter((value): value is number => typeof value === 'number');
         
         if (allValues.length === 0) return [];
@@ -62,7 +62,7 @@ export const HistogramGraph: React.FC<GraphProps> = (props) => {
             ? [...new Set(data.results.map(r => 
                 histogramConfig.colorAxis!.name === 'model' 
                     ? r.llmResponse.model.name 
-                    : r.categories[histogramConfig.colorAxis!.name] || 'default'
+                    : r.factors[histogramConfig.colorAxis!.name] || 'default'
             ))]
             : ['default'];
 
@@ -75,7 +75,7 @@ export const HistogramGraph: React.FC<GraphProps> = (props) => {
 
         // Count values in bins
         data.results.forEach(result => {
-            const value = result.attributes[histogramConfig.yAxis.name];
+            const value = result.responseVariables[histogramConfig.yAxis.name];
             if (typeof value !== 'number') return;
 
             const binIndex = Math.floor((value - min) / binSize);
@@ -84,7 +84,7 @@ export const HistogramGraph: React.FC<GraphProps> = (props) => {
             const category = histogramConfig.colorAxis
                 ? histogramConfig.colorAxis.name === 'model'
                     ? result.llmResponse.model.name
-                    : result.categories[histogramConfig.colorAxis.name] || 'default'
+                    : result.factors[histogramConfig.colorAxis.name] || 'default'
                 : 'default';
 
             if (bins[binStart]) {
@@ -145,7 +145,7 @@ export const HistogramGraph: React.FC<GraphProps> = (props) => {
                     {(histogramConfig.colorAxis?.name === 'model'
                         ? data.results.map(r => r.llmResponse.model.name)
                         : histogramConfig.colorAxis
-                            ? [...new Set(data.results.map(r => r.categories[histogramConfig.colorAxis!.name] || 'default'))]
+                            ? [...new Set(data.results.map(r => r.factors[histogramConfig.colorAxis!.name] || 'default'))]
                             : ['default']
                     ).map((category, index) => (
                         <Bar
