@@ -12,6 +12,7 @@
     "@anthropic-ai/sdk": "^0.36.3",
     "@google/generative-ai": "^0.22.0",
     "@heroicons/react": "^2.2.0",
+    "@vercel/analytics": "^1.5.0",
     "groq-sdk": "^0.15.0",
     "lodash": "^4.17.21",
     "mathjs": "^14.3.0",
