@@ -132,7 +132,25 @@ export default function Home() {
                 groqApiKey: apiKeys.groq
             });
 
-            const analysisService = new AnalysisService(config, (progress) => {
+            // Create a copy of the config with the API keys
+            const configWithApiKeys = {
+                ...config,
+                responseVariables: config.responseVariables.map(variable => {
+                    if (variable.type === 'sentiment-api') {
+                        return {
+                            ...variable,
+                            config: {
+                                name: variable.name,
+                                description: variable.description,
+                                apiKey: apiKeys.jigsaw
+                            }
+                        };
+                    }
+                    return variable;
+                })
+            };
+
+            const analysisService = new AnalysisService(configWithApiKeys, (progress) => {
                 setProgress(progress);
             });
             const results = await analysisService.runAnalysis();

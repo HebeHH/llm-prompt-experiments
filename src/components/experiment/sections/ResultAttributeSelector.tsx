@@ -21,8 +21,12 @@ function AttributeConfigModal({ attribute, onSave, onCancel }: AttributeConfigMo
 
   const handleSave = () => {
     if (attribute.type === 'sentiment-api') {
-      // For sentiment analysis, use the API key from environment
-      onSave(attribute, { apiKey: process.env.NEXT_PUBLIC_JIGSAW_API_KEY });
+      // For sentiment analysis, use a placeholder API key that will be replaced later
+      onSave(attribute, { 
+        name: attribute.name,
+        description: attribute.description,
+        apiKey: '' 
+      });
     } else {
       onSave(attribute, config);
     }
@@ -65,10 +69,10 @@ function AttributeConfigModal({ attribute, onSave, onCancel }: AttributeConfigMo
   );
 }
 
-export const ResultAttributeSelector = ({
+export default function ResultAttributeSelector({
   selectedAttributes,
   onChange,
-}: ResultAttributeSelectorProps) => {
+}: ResultAttributeSelectorProps) {
   const [configuring, setConfiguring] = useState<ResponseVariable | null>(null);
 
   useEffect(() => {
@@ -88,21 +92,19 @@ export const ResultAttributeSelector = ({
   const handleAttributeToggle = (attribute: ResponseVariable) => {
     if (isAttributeSelected(attribute)) {
       onChange(selectedAttributes.filter(a => a.name !== attribute.name));
-    } else if (attribute.type === 'simple' || attribute.type === 'sentiment-api') {
-      // For sentiment analysis, automatically add the API key from the environment
-      if (attribute.type === 'sentiment-api') {
-        const sentimentConfig = {
-          ...attribute,
-          config: {
-            name: attribute.name,
-            description: attribute.description,
-            apiKey: process.env.NEXT_PUBLIC_JIGSAW_API_KEY || ''
-          }
-        };
-        onChange([...selectedAttributes, sentimentConfig]);
-      } else {
-        onChange([...selectedAttributes, attribute]);
-      }
+    } else if (attribute.type === 'simple') {
+      onChange([...selectedAttributes, attribute]);
+    } else if (attribute.type === 'sentiment-api') {
+      // For sentiment analysis, add a placeholder config that will be replaced later
+      const sentimentConfig = {
+        ...attribute,
+        config: {
+          name: attribute.name,
+          description: attribute.description,
+          apiKey: '' // This will be replaced in the page.tsx before analysis
+        }
+      };
+      onChange([...selectedAttributes, sentimentConfig]);
     } else {
       setConfiguring(attribute);
     }

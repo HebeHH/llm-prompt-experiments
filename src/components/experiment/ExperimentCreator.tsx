@@ -4,7 +4,7 @@ import { LLMModel, LLMProvider } from '@/lib/types/llm';
 import { ModelSelector } from '@/components/experiment/sections/ModelSelector';
 import { PromptFactorEditor } from '@/components/experiment/sections/PromptFactorEditor';
 import { PromptVariableEditor } from '@/components/experiment/sections/PromptVariableEditor';
-import { ResultAttributeSelector } from '@/components/experiment/sections/ResultAttributeSelector';
+import ResultAttributeSelector from '@/components/experiment/sections/ResultAttributeSelector';
 import { PricingPredictor } from '@/components/experiment/sections/PricingPredictor';
 import { ApiKeyManager } from '@/components/experiment/sections/ApiKeyManager';
 import { resultAttributes } from '@/lib/constants/resultAttributes';
@@ -46,7 +46,7 @@ export const ExperimentCreator: React.FC<ExperimentCreatorProps> = ({
     models: [],
     promptFactors: [],
     promptCovariates: [],
-    responseVariables: [...resultAttributes],
+    responseVariables: [],
     promptFunction: (factors: string[], variable: string) => {
       return `${factors.join("\n")}\n${variable}`;
     },

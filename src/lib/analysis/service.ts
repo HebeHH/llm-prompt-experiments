@@ -34,7 +34,12 @@ export class AnalysisService {
     }
 
     private initializeProgress() {
-        const totalPrompts = this.calculateTotalPrompts();
+        // Get all possible combinations of prompt factors
+        const combinations = this.generateCombinations();
+        // Calculate total prompts per model: combinations × promptCovariates
+        const totalPromptsPerModel = combinations.length * this.config.promptCovariates.length;
+        const totalPrompts = this.config.models.length * totalPromptsPerModel;
+        
         this.progress = {
             totalPrompts,
             completedPrompts: 0,
@@ -44,7 +49,7 @@ export class AnalysisService {
 
         this.config.models.forEach(model => {
             this.progress.modelProgress[model.name] = {
-                total: this.config.promptCovariates.length,
+                total: totalPromptsPerModel,
                 completed: 0,
                 failed: 0
             };
@@ -54,7 +59,8 @@ export class AnalysisService {
     }
 
     private calculateTotalPrompts(): number {
-        return this.config.models.length * this.config.promptCovariates.length;
+        const combinations = this.generateCombinations();
+        return this.config.models.length * combinations.length * this.config.promptCovariates.length;
     }
 
     private updateProgress(model: string, success: boolean) {
