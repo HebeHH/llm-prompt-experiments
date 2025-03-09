@@ -161,11 +161,11 @@ export const PromptFactorEditor: React.FC<PromptFactorEditorProps> = ({
     <div className="h-full flex flex-col">
       {/* Fixed header section */}
       <div className="flex-shrink-0 space-y-4 mb-4">
-        <div className="flex justify-between items-center">
-          <h3 className="text-lg font-semibold text-violet-800">Prompt Factors</h3>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+          <h3 className="text-base sm:text-lg font-semibold text-violet-800">Prompt Factors</h3>
           <button
             onClick={() => setShowPromptsModal(true)}
-            className="px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors"
+            className="text-sm px-3 py-1 sm:px-4 sm:py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors"
           >
             See Prompts
           </button>
@@ -178,12 +178,12 @@ export const PromptFactorEditor: React.FC<PromptFactorEditorProps> = ({
             value={newFactorName}
             onChange={(e) => setNewFactorName(e.target.value)}
             placeholder="New Factor Name"
-            className="flex-1 px-3 py-2 border border-violet-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500"
+            className="flex-1 text-sm px-2 py-1 sm:px-3 sm:py-2 border border-violet-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500"
           />
           <button
             onClick={addFactor}
             disabled={!newFactorName.trim()}
-            className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 disabled:bg-gray-400 transition-colors"
+            className="text-sm px-3 py-1 sm:px-4 sm:py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 disabled:bg-gray-400 transition-colors"
           >
             Add Factor
           </button>

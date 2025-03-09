@@ -140,23 +140,23 @@ export const PromptVariableEditor: React.FC<PromptVariableEditorProps> = ({
     <div className="h-full flex flex-col">
       {/* Fixed header section */}
       <div className="flex-shrink-0 mb-4">
-        <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-violet-800">Prompt Variables</h3>
-          <div className="flex items-center space-x-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+          <h3 className="text-base sm:text-lg font-semibold text-violet-800">Prompt Variables</h3>
+          <div className="flex flex-wrap items-center gap-2 sm:gap-4">
             <button
               onClick={() => setShowPromptsModal(true)}
-              className="px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors"
+              className="text-sm px-3 py-1 sm:px-4 sm:py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors"
             >
               See Prompts
             </button>
-            <label className="flex items-center space-x-2">
+            <label className="flex items-center gap-1 sm:gap-2">
               <input
                 type="checkbox"
                 checked={useDefaultQuestions}
                 onChange={(e) => handleUseDefaultQuestionsChange(e.target.checked)}
-                className="h-4 w-4 text-teal-600 border-violet-300 rounded focus:ring-teal-500"
+                className="h-3 w-3 sm:h-4 sm:w-4 text-teal-600 border-violet-300 rounded focus:ring-teal-500"
               />
-              <span className="text-violet-700">Use Default Questions</span>
+              <span className="text-xs sm:text-sm text-violet-700">Use Default Questions</span>
             </label>
           </div>
         </div>

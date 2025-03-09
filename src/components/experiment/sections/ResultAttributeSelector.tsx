@@ -128,19 +128,19 @@ export default function ResultAttributeSelector({
     <div className="h-full flex flex-col">
       {/* Fixed header section */}
       <div className="flex-shrink-0 mb-4">
-        <h3 className="text-lg font-medium">Select Result Variables</h3>
-        <p className="text-sm text-gray-500">
+        <h3 className="text-base sm:text-lg font-medium">Select Result Variables</h3>
+        <p className="text-xs sm:text-sm text-gray-500">
           Choose which variables to calculate for each response
         </p>
       </div>
 
       {/* Scrollable content area */}
       <div className="flex-1 min-h-0 overflow-y-auto">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
           {resultAttributes.map(attribute => (
             <div
               key={attribute.name}
-              className={`p-4 rounded-lg border-2 transition-colors cursor-pointer ${
+              className={`p-3 sm:p-4 rounded-lg border-2 transition-colors cursor-pointer ${
                 isAttributeSelected(attribute)
                   ? 'border-blue-500 bg-blue-50'
                   : 'border-gray-200 hover:border-blue-300'
@@ -149,8 +149,8 @@ export default function ResultAttributeSelector({
             >
               <div className="flex items-start justify-between">
                 <div>
-                  <h4 className="font-medium text-gray-900">{attribute.name}</h4>
-                  <p className="text-sm text-gray-600">{attribute.description}</p>
+                  <h4 className="text-sm sm:text-base font-medium text-gray-900">{attribute.name}</h4>
+                  <p className="text-xs sm:text-sm text-gray-600">{attribute.description}</p>
                   {attribute.type !== 'simple' && attribute.type !== 'sentiment-api' && !isAttributeSelected(attribute) && (
                     <span className="inline-block mt-2 text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded">
                       Requires configuration
@@ -161,7 +161,7 @@ export default function ResultAttributeSelector({
                   type="checkbox"
                   checked={isAttributeSelected(attribute)}
                   onChange={() => handleAttributeToggle(attribute)}
-                  className="h-5 w-5 text-blue-600"
+                  className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600"
                 />
               </div>
             </div>

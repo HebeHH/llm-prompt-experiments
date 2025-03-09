@@ -191,14 +191,14 @@ export const ExperimentCreator: React.FC<ExperimentCreatorProps> = ({
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="flex-shrink-0 flex items-center px-6 py-4 border-b border-violet-200 bg-violet-50">
+      <div className="flex-shrink-0 flex items-center px-3 sm:px-6 py-3 sm:py-4 border-b border-violet-200 bg-violet-50">
         <div className="flex-1">
           <div className="flex items-center gap-2 group">
             <input
               type="text"
               value={config.name}
               onChange={(e) => handleConfigUpdate({ name: e.target.value })}
-              className="text-xl font-semibold bg-transparent focus:bg-white px-2 py-1 rounded-md focus:outline-none focus:ring-2 focus:ring-violet-500 w-64"
+              className="text-base sm:text-xl font-semibold bg-transparent focus:bg-white px-2 py-1 rounded-md focus:outline-none focus:ring-2 focus:ring-violet-500 w-full sm:w-64"
               placeholder="New Experiment"
             />
             <span className="text-violet-400 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -209,13 +209,13 @@ export const ExperimentCreator: React.FC<ExperimentCreatorProps> = ({
       </div>
 
       {/* Tabs */}
-      <div className="flex-shrink-0 px-6 border-b border-violet-200">
+      <div className="flex-shrink-0 px-3 sm:px-6 border-b border-violet-200">
         <div className="flex space-x-1 overflow-x-auto hide-scrollbar">
           {steps.map((step, index) => (
             <button
               key={step.id}
               onClick={() => setCurrentStepIndex(index)}
-              className={`py-3 px-4 -mb-px relative whitespace-nowrap ${
+              className={`py-2 sm:py-3 px-2 sm:px-4 -mb-px relative whitespace-nowrap text-xs sm:text-sm ${
                 index === currentStepIndex
                   ? 'text-teal-600 font-medium'
                   : 'text-violet-600 hover:text-violet-800'
@@ -232,7 +232,7 @@ export const ExperimentCreator: React.FC<ExperimentCreatorProps> = ({
 
       {/* Content Area */}
       <div className="flex-1 min-h-0 overflow-hidden">
-        <div className="h-full overflow-y-auto p-6">
+        <div className="h-full overflow-y-auto p-3 sm:p-6">
           {React.createElement(
             currentStep.component, 
             getComponentProps(currentStep.id)
@@ -241,10 +241,10 @@ export const ExperimentCreator: React.FC<ExperimentCreatorProps> = ({
       </div>
 
       {/* Footer with navigation */}
-      <div className="flex-shrink-0 p-6 border-t border-violet-200 bg-violet-100">
-        <div className="flex justify-between items-center">
+      <div className="flex-shrink-0 p-3 sm:p-6 border-t border-violet-200 bg-violet-100">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-0">
           {!currentStep.isValid(config, apiKeys) && (
-            <p className="text-sm text-red-600 font-medium">
+            <p className="text-xs sm:text-sm text-red-600 font-medium">
               {currentStep.validationMessage(config, apiKeys)}
             </p>
           )}
@@ -253,7 +253,7 @@ export const ExperimentCreator: React.FC<ExperimentCreatorProps> = ({
             {canGoPrev && (
               <button
                 onClick={() => setCurrentStepIndex(prev => prev - 1)}
-                className="px-6 py-2 border-2 border-violet-400 rounded-lg text-violet-700 hover:bg-violet-50 hover:border-violet-500 font-medium"
+                className="px-4 sm:px-6 py-1 sm:py-2 border-2 border-violet-400 rounded-lg text-violet-700 hover:bg-violet-50 hover:border-violet-500 font-medium text-xs sm:text-sm"
               >
                 Previous
               </button>
@@ -262,9 +262,9 @@ export const ExperimentCreator: React.FC<ExperimentCreatorProps> = ({
               <button
                 onClick={() => setCurrentStepIndex(prev => prev + 1)}
                 disabled={!canGoNext}
-                className={`px-6 py-2 rounded-lg font-medium ${
+                className={`px-4 sm:px-6 py-1 sm:py-2 rounded-lg font-medium text-xs sm:text-sm ${
                   canGoNext
-                    ? 'bg-teal-500 text-white hover:bg-teal-600 border-2 border-teal-500'
+                    ? 'bg-violet-600 text-white hover:bg-violet-700'
                     : 'bg-gray-100 text-gray-400 border-2 border-gray-200 cursor-not-allowed'
                 }`}
               >
@@ -274,13 +274,13 @@ export const ExperimentCreator: React.FC<ExperimentCreatorProps> = ({
               <button
                 onClick={onRunAnalysis}
                 disabled={!isValidConfig || isRunning}
-                className={`px-6 py-2 rounded-lg font-medium ${
+                className={`px-4 sm:px-6 py-1 sm:py-2 rounded-lg font-medium text-xs sm:text-sm ${
                   !isValidConfig || isRunning
                     ? 'bg-gray-100 text-gray-400 border-2 border-gray-200 cursor-not-allowed'
-                    : 'bg-teal-500 text-white hover:bg-teal-600 border-2 border-teal-500'
+                    : 'bg-teal-600 text-white hover:bg-teal-700'
                 }`}
               >
-                {isRunning ? 'Running Analysis...' : 'Run Analysis'}
+                {isRunning ? 'Running...' : 'Run Analysis'}
               </button>
             )}
           </div>
