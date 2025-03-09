@@ -5,7 +5,7 @@ import { models } from '@/lib/constants/llms';
 interface ModelSelectorProps {
   selectedModels: LLMModel[];
   onChange: (models: LLMModel[]) => void;
-  availableApiKeys?: Record<LLMProvider, string>;
+  availableApiKeys?: Partial<Record<LLMProvider, string>>;
 }
 
 export const ModelSelector: React.FC<ModelSelectorProps> = ({
@@ -43,7 +43,7 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
   };
 
   const isModelAvailable = (model: LLMModel) => {
-    return !!availableApiKeys[model.provider];
+    return !!availableApiKeys[model.provider as LLMProvider];
   };
 
   return (
