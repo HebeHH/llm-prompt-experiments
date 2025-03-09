@@ -218,7 +218,7 @@ export const PromptFactorEditor: React.FC<PromptFactorEditorProps> = ({
                     }}
                     className="px-3 py-1 text-sm bg-teal-500 text-white rounded hover:bg-teal-600 transition-colors"
                   >
-                    Add Empty Level
+                    Add Empty
                   </button>
                   <button
                     onClick={(e) => {
