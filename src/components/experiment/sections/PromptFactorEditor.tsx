@@ -160,7 +160,7 @@ export const PromptFactorEditor: React.FC<PromptFactorEditorProps> = ({
   return (
     <div className="h-full flex flex-col">
       {/* Fixed header section */}
-      <div className="flex-shrink-0 space-y-4 px-4 pb-4">
+      <div className="flex-shrink-0 space-y-4 mb-4">
         <div className="flex justify-between items-center">
           <h3 className="text-lg font-semibold text-violet-800">Prompt Factors</h3>
           <button
@@ -191,7 +191,7 @@ export const PromptFactorEditor: React.FC<PromptFactorEditorProps> = ({
       </div>
 
       {/* Scrollable factors list */}
-      <div className="overflow-y-auto px-4 pb-4 flex-grow" style={{ maxHeight: 'calc(100% - 120px)' }}>
+      <div className="flex-1 min-h-0 overflow-y-auto">
         <div className="space-y-4">
           {factors.map((factor, index) => (
             <div

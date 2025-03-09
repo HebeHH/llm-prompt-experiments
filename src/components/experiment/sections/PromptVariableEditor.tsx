@@ -139,7 +139,7 @@ export const PromptVariableEditor: React.FC<PromptVariableEditorProps> = ({
   return (
     <div className="h-full flex flex-col">
       {/* Fixed header section */}
-      <div className="flex-shrink-0 px-4 pb-4">
+      <div className="flex-shrink-0 mb-4">
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-semibold text-violet-800">Prompt Variables</h3>
           <div className="flex items-center space-x-4">
@@ -163,7 +163,7 @@ export const PromptVariableEditor: React.FC<PromptVariableEditorProps> = ({
       </div>
 
       {/* Scrollable content area */}
-      <div className="overflow-y-auto px-4 pb-4 flex-grow" style={{ maxHeight: 'calc(100% - 80px)' }}>
+      <div className="flex-1 min-h-0 overflow-y-auto">
         {useDefaultQuestions ? (
           <div className="space-y-4">
             <div className="flex items-center space-x-4">

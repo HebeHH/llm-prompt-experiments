@@ -189,9 +189,9 @@ export const ExperimentCreator: React.FC<ExperimentCreatorProps> = ({
   };
 
   return (
-    <div className="flex flex-col flex-1">
+    <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="flex items-center px-6 py-4 border-b border-violet-200 bg-violet-50">
+      <div className="flex-shrink-0 flex items-center px-6 py-4 border-b border-violet-200 bg-violet-50">
         <div className="flex-1">
           <div className="flex items-center gap-2 group">
             <input
@@ -209,7 +209,7 @@ export const ExperimentCreator: React.FC<ExperimentCreatorProps> = ({
       </div>
 
       {/* Tabs */}
-      <div className="px-6 border-b border-violet-200">
+      <div className="flex-shrink-0 px-6 border-b border-violet-200">
         <div className="flex space-x-1 overflow-x-auto hide-scrollbar">
           {steps.map((step, index) => (
             <button
@@ -231,8 +231,8 @@ export const ExperimentCreator: React.FC<ExperimentCreatorProps> = ({
       </div>
 
       {/* Content Area */}
-      <div className="flex-1 overflow-hidden p-6">
-        <div className="h-full overflow-hidden">
+      <div className="flex-1 min-h-0 overflow-hidden">
+        <div className="h-full overflow-y-auto p-6">
           {React.createElement(
             currentStep.component, 
             getComponentProps(currentStep.id)
@@ -241,7 +241,7 @@ export const ExperimentCreator: React.FC<ExperimentCreatorProps> = ({
       </div>
 
       {/* Footer with navigation */}
-      <div className="p-6 border-t border-violet-200 bg-violet-100">
+      <div className="flex-shrink-0 p-6 border-t border-violet-200 bg-violet-100">
         <div className="flex justify-between items-center">
           {!currentStep.isValid(config, apiKeys) && (
             <p className="text-sm text-red-600 font-medium">
