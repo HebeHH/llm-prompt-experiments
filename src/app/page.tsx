@@ -314,7 +314,11 @@ export default function Home() {
                                                 </div>
                                                 {stats.errors.length > 0 && (
                                                     <div className="mt-2 p-3 bg-red-50 rounded-md border border-red-200">
-                                                        <h4 className="text-sm font-medium text-red-700 mb-1">Errors ({stats.errors.length})</h4>
+                                                        <h4 className="text-sm font-medium text-red-700 mb-1">
+                                                            Errors ({stats.errors.length}) 
+                                                            {stats.consecutiveErrorCount > 0 && 
+                                                                ` - ${stats.consecutiveErrorCount} consecutive`}
+                                                        </h4>
                                                         <div className="max-h-32 overflow-y-auto">
                                                             {stats.errors.slice(-3).map((error, idx) => (
                                                                 <div key={idx} className="text-xs text-red-600 mb-1">
@@ -326,6 +330,9 @@ export default function Home() {
                                                                     + {stats.errors.length - 3} more errors
                                                                 </div>
                                                             )}
+                                                        </div>
+                                                        <div className="text-xs text-red-600 mt-1">
+                                                            <span className="font-medium">Note:</span> Model will be disabled after 10 total errors or 5 consecutive errors
                                                         </div>
                                                     </div>
                                                 )}

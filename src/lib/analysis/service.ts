@@ -102,7 +102,8 @@ export class AnalysisService {
     public async runAnalysis(): Promise<AnalysisData> {
         this.initializeProgress();
         const results: AnalysisResult[] = [];
-        const MAX_ERROR_COUNT = 5;
+        const MAX_TOTAL_ERROR_COUNT = 10;
+        const MAX_CONSECUTIVE_ERROR_COUNT = 5;
         const INITIAL_BACKOFF_MS = 10000; // 10 seconds
 
         // Get all possible combinations of prompt factors
@@ -151,12 +152,14 @@ export class AnalysisService {
                                 
                                 modelProgress.errors.push(errorInfo);
                                 modelProgress.errorCount++;
+                                modelProgress.consecutiveErrorCount++;
                                 
                                 console.error(`Error from ${model.name}: ${llmResponse.error}`);
                                 
-                                // Check if we've hit the max error count
-                                if (modelProgress.errorCount >= MAX_ERROR_COUNT) {
-                                    console.error(`Disabling model ${model.name} due to too many errors (${modelProgress.errorCount})`);
+                                // Check if we've hit the max error count (total or consecutive)
+                                if (modelProgress.errorCount >= MAX_TOTAL_ERROR_COUNT || 
+                                    modelProgress.consecutiveErrorCount >= MAX_CONSECUTIVE_ERROR_COUNT) {
+                                    console.error(`Disabling model ${model.name} due to too many errors (${modelProgress.errorCount} total, ${modelProgress.consecutiveErrorCount} consecutive)`);
                                     modelProgress.disabled = true;
                                     modelProgress.failed += (modelProgress.total - modelProgress.completed - modelProgress.failed);
                                     this.onProgress({ ...this.progress });
@@ -180,6 +183,9 @@ export class AnalysisService {
                             }
 
                             // If we got here, we have a valid response
+                            // Reset consecutive error count on success
+                            modelProgress.consecutiveErrorCount = 0;
+                            
                             // Create the result object
                             const result: AnalysisResult = {
                                 llmResponse: {
@@ -220,10 +226,12 @@ export class AnalysisService {
                             
                             modelProgress.errors.push(errorInfo);
                             modelProgress.errorCount++;
+                            modelProgress.consecutiveErrorCount++;
                             
-                            // Check if we've hit the max error count
-                            if (modelProgress.errorCount >= MAX_ERROR_COUNT) {
-                                console.error(`Disabling model ${model.name} due to too many errors (${modelProgress.errorCount})`);
+                            // Check if we've hit the max error count (total or consecutive)
+                            if (modelProgress.errorCount >= MAX_TOTAL_ERROR_COUNT || 
+                                modelProgress.consecutiveErrorCount >= MAX_CONSECUTIVE_ERROR_COUNT) {
+                                console.error(`Disabling model ${model.name} due to too many errors (${modelProgress.errorCount} total, ${modelProgress.consecutiveErrorCount} consecutive)`);
                                 modelProgress.disabled = true;
                                 modelProgress.failed += (modelProgress.total - modelProgress.completed - modelProgress.failed);
                                 this.onProgress({ ...this.progress });
