@@ -125,17 +125,12 @@ export default function Home() {
 
         try {
             // Initialize LLM providers with API keys
-            try {
-                LLMProviderFactory.initialize({
-                    anthropicApiKey: apiKeys.anthropic,
-                    googleApiKey: apiKeys.google,
-                    openaiApiKey: apiKeys.openai,
-                    groqApiKey: apiKeys.groq
-                });
-            } catch (error) {
-                console.error("Error initializing LLM providers:", error);
-                throw new Error("Failed to initialize LLM providers. Please check your API keys.");
-            }
+            LLMProviderFactory.initialize({
+                anthropicApiKey: apiKeys.anthropic,
+                googleApiKey: apiKeys.google,
+                openaiApiKey: apiKeys.openai,
+                groqApiKey: apiKeys.groq
+            });
 
             // Create a copy of the config with the API keys
             const configWithApiKeys = {
@@ -163,7 +158,6 @@ export default function Home() {
             setCurrentView('results');
             scrollToTop();
         } catch (error) {
-            console.error("Error running analysis:", error);
             setError(error instanceof Error ? error.message : 'An error occurred');
             setCurrentView('create');
         } finally {
@@ -320,51 +314,18 @@ export default function Home() {
                                                 </div>
                                                 {stats.errors.length > 0 && (
                                                     <div className="mt-2 p-3 bg-red-50 rounded-md border border-red-200">
-                                                        <h4 className="text-sm font-medium text-red-700 mb-1">
-                                                            {stats.errors.length} Error{stats.errors.length !== 1 ? 's' : ''}
-                                                        </h4>
-                                                        <div className="text-xs text-red-600 mb-2">
-                                                            {stats.failed > 0 && `${stats.failed} skipped, `}
-                                                            {stats.disabled ? 
-                                                                <span className="font-medium">Model disabled</span> : 
-                                                                stats.consecutiveErrorCount > 0 ? 
-                                                                    <span>Backing off</span> : 
-                                                                    stats.resumedAfterError ? 
-                                                                        <span>Successfully resumed</span> : 
-                                                                        <span>Processing</span>
-                                                            }
-                                                            {stats.consecutiveErrorCount > 0 && 
-                                                                <span className="block italic mt-1">{stats.consecutiveErrorCount} consecutive error{stats.consecutiveErrorCount !== 1 ? 's' : ''}</span>
-                                                            }
-                                                        </div>
-                                                        
-                                                        {/* Group errors by error code */}
-                                                        <div className="text-xs text-red-600">
-                                                            {(() => {
-                                                                // Count errors by code
-                                                                const errorCounts: Record<string, number> = {};
-                                                                stats.errors.forEach(error => {
-                                                                    const code = error.errorCode || (error.isRateLimit ? 'Rate limit' : 'Unknown');
-                                                                    errorCounts[code] = (errorCounts[code] || 0) + 1;
-                                                                });
-                                                                
-                                                                // Display counts
-                                                                return Object.entries(errorCounts).map(([code, count]) => (
-                                                                    <div key={code}>
-                                                                        {count}x {code === 'Rate limit' ? 
-                                                                            '⏱️ Rate limit' : 
-                                                                            code === '429' ? 
-                                                                                '⏱️ 429 Rate limit' : 
-                                                                                code === '403' ? 
-                                                                                    '🔒 403 Forbidden' : 
-                                                                                    code === '401' ? 
-                                                                                        '🔑 401 Unauthorized' : 
-                                                                                        code === '500' || code === '502' || code === '503' || code === '504' ? 
-                                                                                            `⚠️ ${code} Server error` : 
-                                                                                            `❌ ${code}`}
-                                                                    </div>
-                                                                ));
-                                                            })()}
+                                                        <h4 className="text-sm font-medium text-red-700 mb-1">Errors ({stats.errors.length})</h4>
+                                                        <div className="max-h-32 overflow-y-auto">
+                                                            {stats.errors.slice(-3).map((error, idx) => (
+                                                                <div key={idx} className="text-xs text-red-600 mb-1">
+                                                                    <span className="font-medium">{error.isRateLimit ? '⏱️ Rate limit' : '❌ Error'}:</span> {error.message}
+                                                                </div>
+                                                            ))}
+                                                            {stats.errors.length > 3 && (
+                                                                <div className="text-xs text-red-500 italic">
+                                                                    + {stats.errors.length - 3} more errors
+                                                                </div>
+                                                            )}
                                                         </div>
                                                     </div>
                                                 )}
