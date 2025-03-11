@@ -290,6 +290,7 @@ export default function Home() {
                                                     <span>
                                                         {stats.completed} / {stats.total} prompts
                                                         {stats.failed > 0 && ` (${stats.failed} failed)`}
+                                                        {stats.disabled && ' - DISABLED'}
                                                         {' '}({Math.round(((stats.completed + stats.failed) / stats.total) * 100)}%)
                                                     </span>
                                                 </div>
@@ -311,6 +312,23 @@ export default function Home() {
                                                         )}
                                                     </div>
                                                 </div>
+                                                {stats.errors.length > 0 && (
+                                                    <div className="mt-2 p-3 bg-red-50 rounded-md border border-red-200">
+                                                        <h4 className="text-sm font-medium text-red-700 mb-1">Errors ({stats.errors.length})</h4>
+                                                        <div className="max-h-32 overflow-y-auto">
+                                                            {stats.errors.slice(-3).map((error, idx) => (
+                                                                <div key={idx} className="text-xs text-red-600 mb-1">
+                                                                    <span className="font-medium">{error.isRateLimit ? '⏱️ Rate limit' : '❌ Error'}:</span> {error.message}
+                                                                </div>
+                                                            ))}
+                                                            {stats.errors.length > 3 && (
+                                                                <div className="text-xs text-red-500 italic">
+                                                                    + {stats.errors.length - 3} more errors
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                )}
                                             </div>
                                         ))}
                                     </div>

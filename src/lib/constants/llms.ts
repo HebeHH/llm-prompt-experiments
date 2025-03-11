@@ -297,7 +297,15 @@ export const models: LLMModel[] = [
     },
     {
         "provider": "groq",
-        "name": "gemma2-9b-it",
+        "name": "allam-2-7b",
+        "pricing": {
+            "perMillionTokensInput": 0.01,  // Placeholder pricing - adjust as needed
+            "perMillionTokensOutput": 0.01
+        }
+    },
+    {
+        "provider": "groq",
+        "name": "deepseek-r1-distill-llama-70b",
         "pricing": {
             "perMillionTokensInput": 0.01,  // Placeholder pricing - adjust as needed
             "perMillionTokensOutput": 0.01
@@ -307,7 +315,15 @@ export const models: LLMModel[] = [
         "provider": "groq",
         "name": "deepseek-r1-distill-qwen-32b",
         "pricing": {
-            "perMillionTokensInput": 0.01,
+            "perMillionTokensInput": 0.01,  // Placeholder pricing - adjust as needed
+            "perMillionTokensOutput": 0.01
+        }
+    },
+    {
+        "provider": "groq",
+        "name": "gemma2-9b-it",
+        "pricing": {
+            "perMillionTokensInput": 0.01,  // Placeholder pricing - adjust as needed
             "perMillionTokensOutput": 0.01
         }
     },
@@ -315,7 +331,31 @@ export const models: LLMModel[] = [
         "provider": "groq",
         "name": "llama-3.1-8b-instant",
         "pricing": {
-            "perMillionTokensInput": 0.01,
+            "perMillionTokensInput": 0.01,  // Placeholder pricing - adjust as needed
+            "perMillionTokensOutput": 0.01
+        }
+    },
+    {
+        "provider": "groq",
+        "name": "llama-3.2-1b-preview",
+        "pricing": {
+            "perMillionTokensInput": 0.01,  // Placeholder pricing - adjust as needed
+            "perMillionTokensOutput": 0.01
+        }
+    },
+    {
+        "provider": "groq",
+        "name": "llama-3.2-3b-preview",
+        "pricing": {
+            "perMillionTokensInput": 0.01,  // Placeholder pricing - adjust as needed
+            "perMillionTokensOutput": 0.01
+        }
+    },
+    {
+        "provider": "groq",
+        "name": "llama-3.3-70b-specdec",
+        "pricing": {
+            "perMillionTokensInput": 0.01,  // Placeholder pricing - adjust as needed
             "perMillionTokensOutput": 0.01
         }
     },
@@ -323,23 +363,31 @@ export const models: LLMModel[] = [
         "provider": "groq",
         "name": "llama-3.3-70b-versatile",
         "pricing": {
-            "perMillionTokensInput": 0.01,
+            "perMillionTokensInput": 0.01,  // Placeholder pricing - adjust as needed
             "perMillionTokensOutput": 0.01
         }
     },
     {
         "provider": "groq",
-        "name": "qwen-2.5-32b",
+        "name": "llama-guard-3-8b",
         "pricing": {
-            "perMillionTokensInput": 0.01,
+            "perMillionTokensInput": 0.01,  // Placeholder pricing - adjust as needed
             "perMillionTokensOutput": 0.01
         }
     },
     {
         "provider": "groq",
-        "name": "llama3-8b-8192b",
+        "name": "llama3-70b-8192",
         "pricing": {
-            "perMillionTokensInput": 0.01,
+            "perMillionTokensInput": 0.01,  // Placeholder pricing - adjust as needed
+            "perMillionTokensOutput": 0.01
+        }
+    },
+    {
+        "provider": "groq",
+        "name": "llama3-8b-8192",
+        "pricing": {
+            "perMillionTokensInput": 0.01,  // Placeholder pricing - adjust as needed
             "perMillionTokensOutput": 0.01
         }
     },
@@ -347,26 +395,42 @@ export const models: LLMModel[] = [
         "provider": "groq",
         "name": "mistral-saba-24b",
         "pricing": {
-            "perMillionTokensInput": 0.01,
+            "perMillionTokensInput": 0.01,  // Placeholder pricing - adjust as needed
             "perMillionTokensOutput": 0.01
         }
     },
     {
         "provider": "groq",
-        "name": "lama-3.2-3b-preview",
+        "name": "mixtral-8x7b-32768",
         "pricing": {
-            "perMillionTokensInput": 0.01,
+            "perMillionTokensInput": 0.01,  // Placeholder pricing - adjust as needed
             "perMillionTokensOutput": 0.01
         }
     },
     {
         "provider": "groq",
-        "name": "lama-3.2-1b-preview",
+        "name": "qwen-2.5-32b",
         "pricing": {
-            "perMillionTokensInput": 0.01,
+            "perMillionTokensInput": 0.01,  // Placeholder pricing - adjust as needed
             "perMillionTokensOutput": 0.01
         }
-    }
+    },
+    {
+        "provider": "groq",
+        "name": "qwen-2.5-coder-32b",
+        "pricing": {
+            "perMillionTokensInput": 0.01,  // Placeholder pricing - adjust as needed
+            "perMillionTokensOutput": 0.01
+        }
+    },
+    {
+        "provider": "groq",
+        "name": "qwen-qwq-32b",
+        "pricing": {
+            "perMillionTokensInput": 0.01,  // Placeholder pricing - adjust as needed
+            "perMillionTokensOutput": 0.01
+        }
+    },
 ] as const;
 
 // Factory with simplified initialization
