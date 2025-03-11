@@ -26,6 +26,10 @@ interface StatCategoricalAnalysisResult {
   significanceLevel: 'high' | 'medium' | 'low' | 'none';
 }
 
+type CategoricalStatAnalysis = {
+  
+}
+
 type StatAnalysisResult = StatFactorAnalysisResult | StatCategoricalAnalysisResult;
 
 /**
