@@ -572,6 +572,7 @@ function calculateResiduals(
       
       // Create residual object
       const residual: Residual = {
+        responseVariable: responseVar,
         degreesOfFreedom: residualDF,
         sumOfSquares: residualSS,
         meanSquares: residualMS

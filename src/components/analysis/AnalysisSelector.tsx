@@ -81,7 +81,7 @@ export const AnalysisSelector: React.FC<AnalysisSelectorProps> = ({
                 className={`w-full py-2 px-4 rounded-md text-white font-medium ${
                     isRunning
                         ? 'bg-gray-400 cursor-not-allowed'
-                        : 'bg-violet-500hover:bg-blue-700'
+                        : 'bg-violet-500hover:bg-violet-600'
                 }`}
             >
                 {isRunning ? 'Running Analysis...' : 'Run Analysis'}

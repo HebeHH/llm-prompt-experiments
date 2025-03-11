@@ -59,7 +59,7 @@ function AttributeConfigModal({ attribute, onSave, onCancel }: AttributeConfigMo
           </button>
           <button
             onClick={handleSave}
-            className="px-4 py-2 bg-violet-500text-white rounded-md hover:bg-blue-700"
+            className="px-4 py-2 bg-violet-500text-white rounded-md hover:bg-violet-600"
           >
             Save
           </button>

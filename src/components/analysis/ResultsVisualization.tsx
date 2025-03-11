@@ -19,6 +19,7 @@ import { RadarGraph } from './graphs/RadarGraph';
 import { BoxPlotGraph } from './graphs/BoxPlotGraph'
 import { HistogramGraph } from './graphs/HistogramGraph';
 import { ResponseModal } from './ResponseModal';
+import { StatisticalInfo } from './StatisticalInfo';
 import { v4 as uuidv4 } from 'uuid';
 
 interface ResultsVisualizationProps {
@@ -304,7 +305,7 @@ export const ResultsVisualization: React.FC<ResultsVisualizationProps> = ({ data
                 <h2 className="text-2xl font-bold">Analysis Results</h2>
                 <button
                     onClick={() => setShowAddModal(true)}
-                    className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                    className="px-4 py-2 bg-violet-500 text-white rounded hover:bg-violet-600"
                 >
                     Add New Chart
                 </button>
@@ -358,6 +359,9 @@ export const ResultsVisualization: React.FC<ResultsVisualizationProps> = ({ data
                     onClose={() => setSelectedResponse(null)}
                 />
             )}
+            
+            {/* Statistical Analysis Section */}
+            <StatisticalInfo data={data} />
 
             <div className="mt-8">
                 <div 
@@ -382,7 +386,7 @@ export const ResultsVisualization: React.FC<ResultsVisualizationProps> = ({ data
                                         document.body.removeChild(a);
                                         window.URL.revokeObjectURL(url);
                                     }}
-                                    className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
+                                    className="px-3 py-1 text-sm bg-violet-500 text-white rounded hover:bg-violet-600"
                                 >
                                     Download CSV
                                 </button>
@@ -400,7 +404,7 @@ export const ResultsVisualization: React.FC<ResultsVisualizationProps> = ({ data
                                         document.body.removeChild(a);
                                         window.URL.revokeObjectURL(url);
                                     }}
-                                    className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
+                                    className="px-3 py-1 text-sm bg-violet-500 text-white rounded hover:bg-violet-600"
                                 >
                                     Download JSON
                                 </button>

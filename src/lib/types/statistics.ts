@@ -85,6 +85,7 @@ export type MainEffectStatAnalysis = {
 }
 
 export type Residual = {
+    responseVariable: string;
     degreesOfFreedom: number;
     sumOfSquares: number;
     meanSquares: number;
