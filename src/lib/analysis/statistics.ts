@@ -60,12 +60,16 @@ export function performStatisticalAnalysis(analysisData: AnalysisData): StatAnal
   const formattedData = reformatDataForAnalysis(analysisData, validFactors);
   
   // Step 4: Calculate main effects
+  // Note: For main effects, we use eta squared as the effect size measure
+  // In one-way ANOVA, eta squared and partial eta squared are identical
   const mainEffects = calculateMainEffects(formattedData, validFactors, numericalResponseVariables);
   
   // Step 5: Calculate residuals
   const residuals = calculateResiduals(formattedData, validFactors, numericalResponseVariables);
   
   // Step 6: Calculate interactions (2-way and 3-way if enough factors)
+  // Note: For interactions, we use partial eta squared as the effect size measure
+  // Partial eta squared is preferred for interactions as it accounts for the presence of other effects
   const interactions = calculateInteractions(formattedData, validFactors, numericalResponseVariables);
   
   return {
@@ -224,12 +228,13 @@ function calculateMainEffects(
         // Skip if the calculation failed
         if (!anovaResult) continue;
         
-        // Calculate effect size (eta squared)
+        // Calculate effect size (eta squared for main effects)
+        // For one-way ANOVA, eta squared and partial eta squared are the same
         const etaSquared = anovaResult.sumOfSquares / 
           (anovaResult.sumOfSquares + anovaResult.residualSumOfSquares);
         
-        // Determine effect meaningfulness
-        const effectMeaningfulness = determineEffectMeaningfulness(etaSquared);
+        // Determine effect meaningfulness (using eta squared)
+        const effectMeaningfulness = determineEffectMeaningfulness(etaSquared, false);
         
         // Create main effect analysis result
         const mainEffect: MainEffectStatAnalysis = {
@@ -447,22 +452,43 @@ function normalCDF(x: number): number {
 }
 
 /**
- * Determines the meaningfulness of an effect based on eta squared
+ * Determines the meaningfulness of an effect based on partial eta squared or eta squared
+ * Using Cohen's guidelines adapted for effect size measures
+ * 
+ * @param effectSize The effect size value (eta squared or partial eta squared)
+ * @param isPartialEtaSquared Whether the effect size is partial eta squared (true) or eta squared (false)
+ * @returns An object containing the effect size and its qualitative interpretation
  */
-function determineEffectMeaningfulness(etaSquared: number): EffectMeaningfulness {
+function determineEffectMeaningfulness(
+  effectSize: number, 
+  isPartialEtaSquared: boolean = false
+): EffectMeaningfulness {
   let effectMeaningfulness: 'high' | 'medium' | 'low';
   
-  // Cohen's guidelines for eta squared
-  if (etaSquared >= 0.14) {
-    effectMeaningfulness = 'high';
-  } else if (etaSquared >= 0.06) {
-    effectMeaningfulness = 'medium';
+  if (isPartialEtaSquared) {
+    // Cohen's guidelines for partial eta squared
+    // These are commonly used thresholds in the literature
+    if (effectSize >= 0.14) {
+      effectMeaningfulness = 'high';
+    } else if (effectSize >= 0.06) {
+      effectMeaningfulness = 'medium';
+    } else {
+      effectMeaningfulness = 'low';
+    }
   } else {
-    effectMeaningfulness = 'low';
+    // Cohen's guidelines for eta squared
+    // These are the traditional thresholds
+    if (effectSize >= 0.14) {
+      effectMeaningfulness = 'high';
+    } else if (effectSize >= 0.06) {
+      effectMeaningfulness = 'medium';
+    } else {
+      effectMeaningfulness = 'low';
+    }
   }
   
   return {
-    etaSquared,
+    etaSquared: effectSize,
     effectMeaningfulness
   };
 }
@@ -633,12 +659,13 @@ function calculateNWayInteractions(
       // Skip if the calculation failed
       if (!interactionResult) continue;
       
-      // Calculate effect size (eta squared)
-      const etaSquared = interactionResult.sumOfSquares / 
+      // Calculate effect size (partial eta squared)
+      // Partial eta squared is SS_effect / (SS_effect + SS_error)
+      const partialEtaSquared = interactionResult.sumOfSquares / 
         (interactionResult.sumOfSquares + interactionResult.residualSumOfSquares);
       
-      // Determine effect meaningfulness
-      const effectMeaningfulness = determineEffectMeaningfulness(etaSquared);
+      // Determine effect meaningfulness based on partial eta squared
+      const effectMeaningfulness = determineEffectMeaningfulness(partialEtaSquared, true);
       
       // Create interaction analysis result
       const interaction: InteractionStatAnalysis = {

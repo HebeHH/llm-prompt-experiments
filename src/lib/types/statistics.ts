@@ -1,5 +1,3 @@
-
-
 export type SignificanceInfo = {
     sumOfSquares: number;
     degreesOfFreedom: number;
@@ -9,7 +7,15 @@ export type SignificanceInfo = {
 }
 
 export type EffectMeaningfulness = {
+    /**
+     * The effect size value - can be either eta squared (for main effects) 
+     * or partial eta squared (for interactions)
+     */
     etaSquared: number;
+    
+    /**
+     * Qualitative interpretation of the effect size
+     */
     effectMeaningfulness: 'high' | 'medium' | 'low';
 }
 
