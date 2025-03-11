@@ -225,7 +225,7 @@ const InteractionEnhancedInfoWithDefaultState: React.FC<{
                         <span className="mx-2">|</span>
                         <span className="font-medium text-violet-100">partial η²:</span> {interaction.effectMeaningfulness.etaSquared.toFixed(4)}
                     </div>
-                    <span className="text-gray-500 transform transition-transform duration-200" style={{ transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}>
+                    <span className="text-gray-200 transform transition-transform duration-200" style={{ transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}>
                         ▼
                     </span>
                 </div>
