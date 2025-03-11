@@ -297,7 +297,9 @@ export const StatisticalInfo: React.FC<StatisticalInfoProps> = ({ data }) => {
     const totalSignificantEffects = significantMainEffectsCount + significantInteractionsCount;
     
     // Auto-expand the significant effects section if there are any significant effects
-    const [showSignificantEffects, setShowSignificantEffects] = useState(totalSignificantEffects > 0);
+    const [showSignificantEffects, setShowSignificantEffects] = useState(true);
+    // State for showing/hiding all results
+    const [showAllResults, setShowAllResults] = useState(false);
     
     // Helper function to get background color based on significance
     const getSignificanceRowClass = (isSignificant: boolean) => {
@@ -325,126 +327,6 @@ export const StatisticalInfo: React.FC<StatisticalInfoProps> = ({ data }) => {
             </div>
             
             <div className="p-6 space-y-6">
-                {/* Main Effects Table */}
-                <div>
-                    <h3 className="text-lg font-semibold text-teal-900 mb-3">Main Effects</h3>
-                    <div className="overflow-x-auto">
-                        <table className="min-w-full border-collapse">
-                            <thead className="bg-violet-100">
-                                <tr>
-                                    <th className="px-4 py-2 border text-left text-sm">Factor</th>
-                                    <th className="px-4 py-2 border text-left text-sm">Response Variable</th>
-                                    <th className="px-4 py-2 border text-center text-sm">Significant</th>
-                                    <th className="px-4 py-2 border text-right text-sm">p-value</th>
-                                    <th className="px-4 py-2 border text-right text-sm">F-value</th>
-                                    <th className="px-4 py-2 border text-right text-sm">η²</th>
-                                    <th className="px-4 py-2 border text-center text-sm">Effect Size</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {analysis.mainEffects.map((effect, index) => (
-                                    <tr key={index} className={getSignificanceRowClass(effect.hasSignificantRelationship)}>
-                                        <td className="px-4 py-2 border text-sm">{effect.factorName}</td>
-                                        <td className="px-4 py-2 border text-sm">{effect.responseVariable}</td>
-                                        <td className="px-4 py-2 border text-center text-sm">
-                                            {effect.hasSignificantRelationship ? "Yes" : "No"}
-                                        </td>
-                                        <td className="px-4 py-2 border text-right text-sm">
-                                            {effect.significanceInfo.pValue < 0.001 ? "<0.001" : effect.significanceInfo.pValue.toFixed(4)}
-                                        </td>
-                                        <td className="px-4 py-2 border text-right text-sm">{effect.significanceInfo.fValue.toFixed(2)}</td>
-                                        <td className="px-4 py-2 border text-right text-sm">{effect.effectMeaningfulness.etaSquared.toFixed(4)}</td>
-                                        <td className={`px-4 py-2 border text-center text-sm ${getEffectMeaningfulnessClass(effect.effectMeaningfulness.effectMeaningfulness)}`}>
-                                            {effect.effectMeaningfulness.effectMeaningfulness}
-                                        </td>
-                                    </tr>
-                                ))}
-                                {analysis.mainEffects.length === 0 && (
-                                    <tr>
-                                        <td colSpan={7} className="px-4 py-2 border text-center text-sm text-gray-500 italic">No main effects analyzed</td>
-                                    </tr>
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-                
-                {/* Interactions Table */}
-                <div>
-                    <h3 className="text-lg font-semibold text-teal-900 mb-3">Interactions</h3>
-                    <div className="overflow-x-auto">
-                        <table className="min-w-full border-collapse">
-                            <thead className="bg-violet-100">
-                                <tr>
-                                    <th className="px-4 py-2 border text-left text-sm">Factors</th>
-                                    <th className="px-4 py-2 border text-left text-sm">Response Variable</th>
-                                    <th className="px-4 py-2 border text-center text-sm">Significant</th>
-                                    <th className="px-4 py-2 border text-right text-sm">p-value</th>
-                                    <th className="px-4 py-2 border text-right text-sm">F-value</th>
-                                    <th className="px-4 py-2 border text-right text-sm">partial η²</th>
-                                    <th className="px-4 py-2 border text-center text-sm">Effect Size</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {analysis.interactions.map((interaction, index) => (
-                                    <tr key={index} className={getSignificanceRowClass(interaction.hasSignificantRelationship)}>
-                                        <td className="px-4 py-2 border text-sm">{interaction.factors.join(' × ')}</td>
-                                        <td className="px-4 py-2 border text-sm">{interaction.responseVariable}</td>
-                                        <td className="px-4 py-2 border text-center text-sm">
-                                            {interaction.hasSignificantRelationship ? "Yes" : "No"}
-                                        </td>
-                                        <td className="px-4 py-2 border text-right text-sm">
-                                            {interaction.significanceInfo.pValue < 0.001 ? "<0.001" : interaction.significanceInfo.pValue.toFixed(4)}
-                                        </td>
-                                        <td className="px-4 py-2 border text-right text-sm">{interaction.significanceInfo.fValue.toFixed(2)}</td>
-                                        <td className="px-4 py-2 border text-right text-sm">{interaction.effectMeaningfulness.etaSquared.toFixed(4)}</td>
-                                        <td className={`px-4 py-2 border text-center text-sm ${getEffectMeaningfulnessClass(interaction.effectMeaningfulness.effectMeaningfulness)}`}>
-                                            {interaction.effectMeaningfulness.effectMeaningfulness}
-                                        </td>
-                                    </tr>
-                                ))}
-                                {analysis.interactions.length === 0 && (
-                                    <tr>
-                                        <td colSpan={7} className="px-4 py-2 border text-center text-sm text-gray-500 italic">No interactions analyzed</td>
-                                    </tr>
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-                
-                {/* Residuals Table */}
-                <div>
-                    <h3 className="text-lg font-semibold text-teal-900 mb-3">Residuals</h3>
-                    <div className="overflow-x-auto">
-                        <table className="min-w-full border-collapse">
-                            <thead className="bg-violet-100">
-                                <tr>
-                                    <th className="px-4 py-2 border text-left text-sm">Response Variable</th>
-                                    <th className="px-4 py-2 border text-right text-sm">Degrees of Freedom</th>
-                                    <th className="px-4 py-2 border text-right text-sm">Sum of Squares</th>
-                                    <th className="px-4 py-2 border text-right text-sm">Mean Squares</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {analysis.residuals.map((residual, index) => (
-                                    <tr key={index}>
-                                        <td className="px-4 py-2 border text-left text-sm">{residual.responseVariable}</td>
-                                        <td className="px-4 py-2 border text-right text-sm">{residual.degreesOfFreedom}</td>
-                                        <td className="px-4 py-2 border text-right text-sm">{residual.sumOfSquares.toFixed(4)}</td>
-                                        <td className="px-4 py-2 border text-right text-sm">{residual.meanSquares.toFixed(4)}</td>
-                                    </tr>
-                                ))}
-                                {analysis.residuals.length === 0 && (
-                                    <tr>
-                                        <td colSpan={4} className="px-4 py-2 border text-center text-sm text-gray-500 italic">No residuals calculated</td>
-                                    </tr>
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-                
                 {/* Significant Effects Details */}
                 <div className="border rounded-lg overflow-hidden">
                     <div 
@@ -468,6 +350,143 @@ export const StatisticalInfo: React.FC<StatisticalInfoProps> = ({ data }) => {
                         analysis={analysis}
                         isOpen={showSignificantEffects}
                     />
+                </div>
+                
+                {/* All Results Card */}
+                <div className="border rounded-lg overflow-hidden">
+                    <div 
+                        className="flex justify-between items-center p-4 bg-violet-100 cursor-pointer"
+                        onClick={() => setShowAllResults(!showAllResults)}
+                    >
+                        <h3 className="text-lg font-semibold text-violet-900">
+                            All Results
+                        </h3>
+                        <span className="text-gray-500 transform transition-transform duration-200" style={{ transform: showAllResults ? 'rotate(180deg)' : 'rotate(0deg)' }}>
+                            ▼
+                        </span>
+                    </div>
+                    
+                    <div className={`p-6 space-y-6 ${showAllResults ? 'block' : 'hidden'}`}>
+                        {/* Main Effects Table */}
+                        <div>
+                            <h3 className="text-lg font-semibold text-teal-900 mb-3">Main Effects</h3>
+                            <div className="overflow-x-auto">
+                                <table className="min-w-full border-collapse">
+                                    <thead className="bg-violet-100">
+                                        <tr>
+                                            <th className="px-4 py-2 border text-left text-sm">Factor</th>
+                                            <th className="px-4 py-2 border text-left text-sm">Response Variable</th>
+                                            <th className="px-4 py-2 border text-center text-sm">Significant</th>
+                                            <th className="px-4 py-2 border text-right text-sm">p-value</th>
+                                            <th className="px-4 py-2 border text-right text-sm">F-value</th>
+                                            <th className="px-4 py-2 border text-right text-sm">η²</th>
+                                            <th className="px-4 py-2 border text-center text-sm">Effect Size</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {analysis.mainEffects.map((effect, index) => (
+                                            <tr key={index} className={getSignificanceRowClass(effect.hasSignificantRelationship)}>
+                                                <td className="px-4 py-2 border text-sm">{effect.factorName}</td>
+                                                <td className="px-4 py-2 border text-sm">{effect.responseVariable}</td>
+                                                <td className="px-4 py-2 border text-center text-sm">
+                                                    {effect.hasSignificantRelationship ? "Yes" : "No"}
+                                                </td>
+                                                <td className="px-4 py-2 border text-right text-sm">
+                                                    {effect.significanceInfo.pValue < 0.001 ? "<0.001" : effect.significanceInfo.pValue.toFixed(4)}
+                                                </td>
+                                                <td className="px-4 py-2 border text-right text-sm">{effect.significanceInfo.fValue.toFixed(2)}</td>
+                                                <td className="px-4 py-2 border text-right text-sm">{effect.effectMeaningfulness.etaSquared.toFixed(4)}</td>
+                                                <td className={`px-4 py-2 border text-center text-sm ${getEffectMeaningfulnessClass(effect.effectMeaningfulness.effectMeaningfulness)}`}>
+                                                    {effect.effectMeaningfulness.effectMeaningfulness}
+                                                </td>
+                                            </tr>
+                                        ))}
+                                        {analysis.mainEffects.length === 0 && (
+                                            <tr>
+                                                <td colSpan={7} className="px-4 py-2 border text-center text-sm text-gray-500 italic">No main effects analyzed</td>
+                                            </tr>
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        
+                        {/* Interactions Table */}
+                        <div>
+                            <h3 className="text-lg font-semibold text-teal-900 mb-3">Interactions</h3>
+                            <div className="overflow-x-auto">
+                                <table className="min-w-full border-collapse">
+                                    <thead className="bg-violet-100">
+                                        <tr>
+                                            <th className="px-4 py-2 border text-left text-sm">Factors</th>
+                                            <th className="px-4 py-2 border text-left text-sm">Response Variable</th>
+                                            <th className="px-4 py-2 border text-center text-sm">Significant</th>
+                                            <th className="px-4 py-2 border text-right text-sm">p-value</th>
+                                            <th className="px-4 py-2 border text-right text-sm">F-value</th>
+                                            <th className="px-4 py-2 border text-right text-sm">partial η²</th>
+                                            <th className="px-4 py-2 border text-center text-sm">Effect Size</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {analysis.interactions.map((interaction, index) => (
+                                            <tr key={index} className={getSignificanceRowClass(interaction.hasSignificantRelationship)}>
+                                                <td className="px-4 py-2 border text-sm">{interaction.factors.join(' × ')}</td>
+                                                <td className="px-4 py-2 border text-sm">{interaction.responseVariable}</td>
+                                                <td className="px-4 py-2 border text-center text-sm">
+                                                    {interaction.hasSignificantRelationship ? "Yes" : "No"}
+                                                </td>
+                                                <td className="px-4 py-2 border text-right text-sm">
+                                                    {interaction.significanceInfo.pValue < 0.001 ? "<0.001" : interaction.significanceInfo.pValue.toFixed(4)}
+                                                </td>
+                                                <td className="px-4 py-2 border text-right text-sm">{interaction.significanceInfo.fValue.toFixed(2)}</td>
+                                                <td className="px-4 py-2 border text-right text-sm">{interaction.effectMeaningfulness.etaSquared.toFixed(4)}</td>
+                                                <td className={`px-4 py-2 border text-center text-sm ${getEffectMeaningfulnessClass(interaction.effectMeaningfulness.effectMeaningfulness)}`}>
+                                                    {interaction.effectMeaningfulness.effectMeaningfulness}
+                                                </td>
+                                            </tr>
+                                        ))}
+                                        {analysis.interactions.length === 0 && (
+                                            <tr>
+                                                <td colSpan={7} className="px-4 py-2 border text-center text-sm text-gray-500 italic">No interactions analyzed</td>
+                                            </tr>
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        
+                        {/* Residuals Table */}
+                        <div>
+                            <h3 className="text-lg font-semibold text-teal-900 mb-3">Residuals</h3>
+                            <div className="overflow-x-auto">
+                                <table className="min-w-full border-collapse">
+                                    <thead className="bg-violet-100">
+                                        <tr>
+                                            <th className="px-4 py-2 border text-left text-sm">Response Variable</th>
+                                            <th className="px-4 py-2 border text-right text-sm">Degrees of Freedom</th>
+                                            <th className="px-4 py-2 border text-right text-sm">Sum of Squares</th>
+                                            <th className="px-4 py-2 border text-right text-sm">Mean Squares</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {analysis.residuals.map((residual, index) => (
+                                            <tr key={index}>
+                                                <td className="px-4 py-2 border text-left text-sm">{residual.responseVariable}</td>
+                                                <td className="px-4 py-2 border text-right text-sm">{residual.degreesOfFreedom}</td>
+                                                <td className="px-4 py-2 border text-right text-sm">{residual.sumOfSquares.toFixed(4)}</td>
+                                                <td className="px-4 py-2 border text-right text-sm">{residual.meanSquares.toFixed(4)}</td>
+                                            </tr>
+                                        ))}
+                                        {analysis.residuals.length === 0 && (
+                                            <tr>
+                                                <td colSpan={4} className="px-4 py-2 border text-center text-sm text-gray-500 italic">No residuals calculated</td>
+                                            </tr>
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
