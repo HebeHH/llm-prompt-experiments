@@ -101,7 +101,7 @@ export const ResultsVisualization: React.FC<ResultsVisualizationProps> = ({ data
     const [showAddModal, setShowAddModal] = useState(false);
     const [selectedResponse, setSelectedResponse] = useState<string | null>(null);
     const [sortConfig, setSortConfig] = useState<SortConfig | null>(null);
-    const [showRawResults, setShowRawResults] = useState(true);
+    const [showRawResults, setShowRawResults] = useState(false);
     const [graphs, setGraphs] = useState<GraphConfig[]>(() => {
         // Start with a default bar graph
         const baseConfig = DEFAULT_GRAPH_CONFIGS.bar;
@@ -302,7 +302,7 @@ export const ResultsVisualization: React.FC<ResultsVisualizationProps> = ({ data
     return (
         <div className="space-y-6">
             <div className="flex justify-between items-center">
-                <h2 className="text-2xl font-bold">Analysis Results</h2>
+                <h2 className="text-2xl font-bold">Visualisations</h2>
                 <button
                     onClick={() => setShowAddModal(true)}
                     className="px-4 py-2 bg-violet-500 text-white rounded hover:bg-violet-600"
