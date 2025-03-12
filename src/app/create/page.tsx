@@ -7,6 +7,7 @@ import { AnalysisConfig, ResponseVariable } from '@/lib/types/analysis';
 import { LLMProvider } from '@/lib/types/llm';
 import { LLMProviderFactory } from '@/lib/constants/llms';
 import { resultAttributes } from '@/lib/constants/resultAttributes';
+import { Header } from '@/components/layout/Header';
 
 type ExtendedProvider = LLMProvider | 'jigsaw';
 
@@ -137,17 +138,16 @@ export default function CreateExperiment() {
     return (
         <main className="min-h-screen bg-teal-900 py-8">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="flex justify-between items-center mb-8">
-                    <h1 className="text-3xl font-bold text-white">
-                        s<span className="text-violet-300">hebe</span>testing
-                    </h1>
-                    <button
-                        onClick={() => router.push('/')}
-                        className="px-4 py-2 bg-teal-700 text-white rounded-lg hover:bg-teal-800 font-medium"
-                    >
-                        Back to Home
-                    </button>
-                </div>
+                <Header 
+                    rightContent={
+                        <button
+                            onClick={() => router.push('/')}
+                            className="px-4 py-2 bg-teal-700 text-white rounded-lg hover:bg-teal-800 font-medium"
+                        >
+                            Back to Home
+                        </button>
+                    }
+                />
 
                 <div className="bg-white rounded-xl shadow-xl flex flex-col h-[calc(100vh-12rem)]">
                     <ExperimentCreator

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { ResultsVisualization } from '@/components/analysis/ResultsVisualization';
 import { AnalysisConfig, AnalysisData, ResponseVariable } from '@/lib/types/analysis';
 import { resultAttributes } from '@/lib/constants/resultAttributes';
+import { Header } from '@/components/layout/Header';
 
 // Default prompt function to use when restoring from localStorage
 const defaultPromptFunction = (promptFactors: string[], variable: string) => {
@@ -148,25 +149,24 @@ export default function ResultsPage() {
     return (
         <main className="min-h-screen bg-teal-900 py-8">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="flex justify-between items-center mb-8">
-                    <h1 className="text-3xl font-bold text-white">
-                        s<span className="text-violet-300">hebe</span>testing
-                    </h1>
-                    <div className="flex gap-4">
-                        <button
-                            onClick={handleNewExperiment}
-                            className="px-4 py-2 bg-violet-500 text-white rounded-lg hover:bg-violet-600 font-medium"
-                        >
-                            New Experiment
-                        </button>
-                        <button
-                            onClick={handleShowConfig}
-                            className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 font-medium"
-                        >
-                            Show Configuration
-                        </button>
-                    </div>
-                </div>
+                <Header 
+                    rightContent={
+                        <div className="flex gap-4">
+                            <button
+                                onClick={handleNewExperiment}
+                                className="px-4 py-2 bg-violet-500 text-white rounded-lg hover:bg-violet-600 font-medium"
+                            >
+                                New Experiment
+                            </button>
+                            <button
+                                onClick={handleShowConfig}
+                                className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 font-medium"
+                            >
+                                Show Configuration
+                            </button>
+                        </div>
+                    }
+                />
 
                 <div className="space-y-8">
                     {showConfigView && results && (

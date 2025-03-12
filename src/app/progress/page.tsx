@@ -7,6 +7,7 @@ import { AnalysisConfig, AnalysisData, ResponseVariable } from '@/lib/types/anal
 import { LLMProvider } from '@/lib/types/llm';
 import { LLMProviderFactory } from '@/lib/constants/llms';
 import { resultAttributes } from '@/lib/constants/resultAttributes';
+import { Header } from '@/components/layout/Header';
 
 type ExtendedProvider = LLMProvider | 'jigsaw';
 
@@ -136,12 +137,8 @@ export default function ProgressPage() {
     return (
         <main className="min-h-screen bg-teal-900 py-8">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="flex justify-between items-center mb-8">
-                    <h1 className="text-3xl font-bold text-white">
-                        s<span className="text-violet-300">hebe</span>testing
-                    </h1>
-                </div>
-
+                <Header />
+                
                 {progress && (
                     <div className="bg-white rounded-xl shadow-xl overflow-hidden">
                         <div className="flex items-center justify-between px-6 py-4 border-b border-violet-200 bg-violet-100">
