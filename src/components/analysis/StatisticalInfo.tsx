@@ -455,8 +455,22 @@ export const StatisticalInfo: React.FC<StatisticalInfoProps> = ({
         }
     };
     
+    // Serialize statistical analysis results for saving
+    const statsData = {
+        mainEffects: analysis.mainEffects,
+        interactions: analysis.interactions,
+        residuals: analysis.residuals
+    };
+
+    // Create a JSON string for the stats data - this will be stored in a data attribute
+    const statsDataJson = JSON.stringify(statsData);
+
     return (
-        <div className={`bg-white shadow-xl overflow-hidden mb-8 ${isCollapsed ? 'rounded-t-xl' : 'rounded-xl'}`}>
+        <div 
+            id="statistics-container"
+            data-stats={statsDataJson}
+            className={`bg-white shadow-xl overflow-hidden mb-8 ${isCollapsed ? 'rounded-t-xl' : 'rounded-xl'}`}
+        >
             <div 
                 className="border-b flex items-center border-teal-200 px-6 py-4 bg-teal-800 justify-between cursor-pointer hover:bg-teal-900 rounded-t-xl"
                 onClick={onToggleCollapse}

@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { AnalysisConfig, PromptFactor, ResponseVariable } from '@/lib/types/analysis';
 import { LLMModel, LLMProvider } from '@/lib/types/llm';
 import { ModelSelector } from '@/components/experiment/sections/ModelSelector';
@@ -8,10 +8,17 @@ import ResultAttributeSelector from '@/components/experiment/sections/ResultAttr
 import { PricingPredictor } from '@/components/experiment/sections/PricingPredictor';
 import { ApiKeyManager } from '@/components/experiment/sections/ApiKeyManager';
 import { resultAttributes } from '@/lib/constants/resultAttributes';
-
-type ExtendedProvider = LLMProvider | 'jigsaw';
+import { 
+  saveNamedConfig, 
+  loadSavedConfigs, 
+  deleteConfig,
+  SavedConfiguration,
+  ExtendedProvider
+} from '@/lib/utils/configStorage';
 
 interface ExperimentCreatorProps {
+  config?: AnalysisConfig;
+  apiKeys?: Record<ExtendedProvider, string>;
   onConfigChange: (config: AnalysisConfig) => void;
   onRunAnalysis: () => void;
   isRunning: boolean;
@@ -35,25 +42,108 @@ type WizardStep = {
 };
 
 export const ExperimentCreator: React.FC<ExperimentCreatorProps> = ({
+  config: initialConfig,
+  apiKeys: initialApiKeys,
   onConfigChange,
   onRunAnalysis,
   isRunning,
   onApiKeysChange
 }) => {
-  const [config, setConfig] = useState<AnalysisConfig>({
+  const defaultConfig: AnalysisConfig = {
     name: '',
     description: '',
     models: [],
     promptFactors: [],
-    promptCovariates: [],
+    promptNoise: [], // Renamed from promptCovariates
     responseVariables: [],
     promptFunction: (factors: string[], variable: string) => {
       return `${factors.join("\n")}\n${variable}`;
     },
-  });
+  };
 
-  const [apiKeys, setApiKeys] = useState<Record<ExtendedProvider, string>>(defaultApiKeys);
+  const [config, setConfig] = useState<AnalysisConfig>(initialConfig || defaultConfig);
+  const [apiKeys, setApiKeys] = useState<Record<ExtendedProvider, string>>(initialApiKeys || defaultApiKeys);
+  
+  // Update state if props change
+  useEffect(() => {
+    if (initialConfig) {
+      setConfig(initialConfig);
+    }
+  }, [initialConfig]);
+  
+  useEffect(() => {
+    if (initialApiKeys) {
+      setApiKeys(initialApiKeys);
+    }
+  }, [initialApiKeys]);
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
+  const [showSaveModal, setShowSaveModal] = useState(false);
+  const [showLoadModal, setShowLoadModal] = useState(false);
+  const [savedConfigs, setSavedConfigs] = useState<SavedConfiguration[]>([]);
+  const configNameInputRef = useRef<HTMLInputElement>(null);
+
+  // Load saved configurations when load modal is opened
+  const handleOpenLoadModal = useCallback(() => {
+    setSavedConfigs(loadSavedConfigs());
+    setShowLoadModal(true);
+  }, []);
+
+  const handleSaveConfig = useCallback(() => {
+    if (config.name.trim() === '') {
+      // If no name is set, focus the name input
+      if (configNameInputRef.current) {
+        configNameInputRef.current.focus();
+      }
+      alert('Please provide a name for your configuration before saving.');
+      return;
+    }
+
+    // Check if a configuration with this name already exists
+    const existingConfigs = loadSavedConfigs();
+    const nameExists = existingConfigs.some(c => c.name === config.name);
+    if (nameExists) {
+      const confirmOverwrite = confirm(`A configuration named "${config.name}" already exists. Do you want to replace it?`);
+      if (!confirmOverwrite) {
+        return;
+      }
+    }
+
+    // Save the configuration
+    saveNamedConfig(config);
+    setShowSaveModal(false);
+    alert(`Configuration "${config.name}" has been saved successfully!`);
+  }, [config]);
+
+  const handleDeleteConfig = useCallback((configId: string, configName: string) => {
+    if (confirm(`Are you sure you want to delete "${configName}"?`)) {
+      deleteConfig(configId);
+      setSavedConfigs(loadSavedConfigs());
+    }
+  }, []);
+
+  const handleLoadConfig = useCallback((savedConfig: SavedConfiguration) => {
+    // Restore functions to the configuration
+    const restoredConfig: AnalysisConfig = {
+      ...savedConfig.config,
+      promptFunction: config.promptFunction,
+      responseVariables: savedConfig.config.responseVariables.map(variable => {
+        const matchingAttribute = resultAttributes.find(attr => attr.name === variable.name);
+        if (matchingAttribute) {
+          return {
+            ...variable,
+            function: matchingAttribute.function,
+            requiresApiCall: matchingAttribute.requiresApiCall
+          };
+        }
+        return variable as ResponseVariable;
+      })
+    };
+    
+    // Update the current configuration
+    setConfig(restoredConfig);
+    onConfigChange(restoredConfig);
+    setShowLoadModal(false);
+  }, [config.promptFunction, onConfigChange]);
 
   const handleConfigUpdate = useCallback((update: Partial<AnalysisConfig>) => {
     const newConfig = { ...config, ...update };
@@ -97,11 +187,11 @@ export const ExperimentCreator: React.FC<ExperimentCreatorProps> = ({
           : "Each prompt factor must have at least one level"
     },
     {
-      id: 'covariates',
-      title: 'Prompt Covariates',
+      id: 'noise',
+      title: 'Prompt Noise',
       component: PromptVariableEditor,
-      isValid: (config) => config.promptCovariates.length > 0,
-      validationMessage: () => "Add at least one prompt covariate"
+      isValid: (config) => config.promptNoise?.length > 0,
+      validationMessage: () => "Add at least one prompt noise variable"
     },
     {
       id: 'response',
@@ -137,7 +227,7 @@ export const ExperimentCreator: React.FC<ExperimentCreatorProps> = ({
         const updates: Partial<AnalysisConfig> = {};
         if (stepId === 'models') updates.models = value;
         if (stepId === 'factors') updates.promptFactors = value;
-        if (stepId === 'covariates') updates.promptCovariates = value;
+        if (stepId === 'noise') updates.promptNoise = value; // Updated from 'covariates'
         if (stepId === 'response') updates.responseVariables = value;
         handleConfigUpdate(updates);
       },
@@ -161,13 +251,13 @@ export const ExperimentCreator: React.FC<ExperimentCreatorProps> = ({
         return {
           ...baseProps,
           factors: config.promptFactors,
-          promptCovariates: config.promptCovariates,
+          promptNoise: config.promptNoise, // Renamed from promptCovariates
           promptFunction: config.promptFunction,
         };
-      case 'covariates':
+      case 'noise':
         return {
           ...baseProps,
-          variables: config.promptCovariates,
+          variables: config.promptNoise, // Renamed from promptCovariates
           promptFactors: config.promptFactors,
           promptFunction: config.promptFunction,
         };
@@ -181,12 +271,119 @@ export const ExperimentCreator: React.FC<ExperimentCreatorProps> = ({
           ...baseProps,
           models: config.models,
           promptFactors: config.promptFactors,
-          promptCovariates: config.promptCovariates,
+          promptNoise: config.promptNoise, // Renamed from promptCovariates
         };
       default:
         return baseProps;
     }
   };
+
+  // Save Configuration Modal
+  const SaveModal = () => {
+    // Use local state to avoid input focus issues
+    const [configName, setConfigName] = useState(config.name);
+    
+    const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      setConfigName(e.target.value);
+    };
+    
+    const handleSave = () => {
+      handleConfigUpdate({ name: configName });
+      // Call the save function with a small delay to ensure name update is processed
+      setTimeout(() => handleSaveConfig(), 0);
+    };
+    
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="bg-white p-6 rounded-lg shadow-xl max-w-md w-full">
+          <h3 className="text-lg font-semibold mb-4">Save Configuration</h3>
+          <p className="mb-4 text-gray-600">
+            Save this experiment configuration for later use. The configuration will be stored in your browser.
+          </p>
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Configuration Name
+            </label>
+            <input
+              type="text"
+              value={configName}
+              onChange={handleNameChange}
+              ref={configNameInputRef}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-violet-500"
+              placeholder="My Experiment Configuration"
+            />
+          </div>
+          <div className="flex justify-end space-x-3">
+            <button
+              onClick={() => setShowSaveModal(false)}
+              className="px-4 py-2 text-gray-600 hover:text-gray-800"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleSave}
+              className="px-4 py-2 bg-violet-600 text-white rounded hover:bg-violet-700"
+            >
+              Save Configuration
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // Load Configuration Modal
+  const LoadModal = () => (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white p-6 rounded-lg shadow-xl max-w-md w-full">
+        <h3 className="text-lg font-semibold mb-4">Load Configuration</h3>
+        {savedConfigs.length === 0 ? (
+          <p className="text-gray-600 mb-4">
+            No saved configurations found. Create and save a configuration to see it here.
+          </p>
+        ) : (
+          <div className="max-h-[60vh] overflow-y-auto">
+            <p className="text-gray-600 mb-2">
+              Select a configuration to load:
+            </p>
+            <div className="space-y-2">
+              {savedConfigs.map((saved) => (
+                <div 
+                  key={saved.id} 
+                  className="border rounded-lg p-3 hover:bg-gray-50 cursor-pointer flex justify-between items-center"
+                >
+                  <div 
+                    className="flex-1"
+                    onClick={() => handleLoadConfig(saved)}
+                  >
+                    <div className="font-medium">{saved.name}</div>
+                    <div className="text-xs text-gray-500">
+                      Saved on {new Date(saved.updatedAt).toLocaleDateString()}
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => handleDeleteConfig(saved.id, saved.name)}
+                    className="text-red-600 hover:text-red-800"
+                    title="Delete configuration"
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+        <div className="mt-6 flex justify-end">
+          <button
+            onClick={() => setShowLoadModal(false)}
+            className="px-4 py-2 text-gray-600 hover:text-gray-800"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 
   return (
     <div className="flex flex-col h-full">
@@ -205,6 +402,24 @@ export const ExperimentCreator: React.FC<ExperimentCreatorProps> = ({
               ✎
             </span>
           </div>
+        </div>
+        
+        {/* Save/Load buttons */}
+        <div className="flex space-x-2">
+          <button
+            onClick={() => setShowSaveModal(true)}
+            className="px-3 py-1 text-sm bg-violet-500 text-white rounded hover:bg-violet-600"
+            title="Save this configuration"
+          >
+            Save
+          </button>
+          <button
+            onClick={handleOpenLoadModal}
+            className="px-3 py-1 text-sm bg-teal-500 text-white rounded hover:bg-teal-600"
+            title="Load a saved configuration"
+          >
+            Load
+          </button>
         </div>
       </div>
 
@@ -286,6 +501,10 @@ export const ExperimentCreator: React.FC<ExperimentCreatorProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Modals */}
+      {showSaveModal && <SaveModal />}
+      {showLoadModal && <LoadModal />}
     </div>
   );
 };

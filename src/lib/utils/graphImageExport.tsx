@@ -479,9 +479,9 @@ const renderRadarChart = (data: AnalysisData, config: GraphConfig) => {
         outerRadius="80%" 
         data={chartData}
       >
-        <PolarGrid />
+        <PolarGrid gridType="polygon" />
         <PolarAngleAxis dataKey="metric" />
-        <PolarRadiusAxis />
+        <PolarRadiusAxis angle={30} domain={[0, 100]} />
         <Tooltip />
         <Legend />
         {colorCategories.map((category, index) => (

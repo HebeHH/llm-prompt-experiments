@@ -108,12 +108,12 @@ export const PromptVariableEditor: React.FC<PromptVariableEditorProps> = ({
     return combinations.length > 0 ? combinations : [[]];
   };
 
-  // Generate all prompts for all combinations and covariates
+  // Generate all prompts for all combinations and noise variables
   const generateAllPrompts = () => {
     const combinations = getAllFactorLevelCombinations();
     const allPrompts: Array<{ 
       combination: string; 
-      covariate: string; 
+      noise: string; // Renamed from covariate
       prompt: string 
     }> = [];
 
@@ -123,11 +123,11 @@ export const PromptVariableEditor: React.FC<PromptVariableEditorProps> = ({
         ? combination.map(c => `${c.factorName}: ${c.levelName}`).join(", ")
         : "No factors defined";
       
-      for (const covariate of variables.length > 0 ? variables : ["COVARIATE TEXT HERE"]) {
-        const fullPrompt = promptFunction(factorPrompts, covariate);
+      for (const noise of variables.length > 0 ? variables : ["NOISE TEXT HERE"]) {
+        const fullPrompt = promptFunction(factorPrompts, noise);
         allPrompts.push({
           combination: combinationString,
-          covariate,
+          noise, // Renamed from covariate
           prompt: fullPrompt
         });
       }
@@ -267,8 +267,8 @@ export const PromptVariableEditor: React.FC<PromptVariableEditorProps> = ({
                         <span className="text-violet-600">{item.combination}</span>
                       </div>
                       <div className="mb-2">
-                        <span className="font-medium text-violet-800">Covariate:</span>{" "}
-                        <span className="text-violet-600">{item.covariate}</span>
+                        <span className="font-medium text-violet-800">Noise:</span>{" "}
+                        <span className="text-violet-600">{item.noise}</span>
                       </div>
                       <div>
                         <span className="font-medium text-violet-800">Prompt:</span>

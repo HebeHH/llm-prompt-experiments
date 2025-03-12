@@ -5,13 +5,13 @@ import { PromptFactor } from '@/lib/types/analysis';
 interface PricingPredictorProps {
   models: LLMModel[];
   promptFactors: PromptFactor[];
-  promptCovariates: string[];
+  promptNoise: string[]; // Renamed from promptCovariates
 }
 
 export const PricingPredictor: React.FC<PricingPredictorProps> = ({
   models,
   promptFactors: promptCategories,
-  promptCovariates: promptVariables,
+  promptNoise: promptVariables, // Renamed from promptCovariates
 }) => {
   const estimations = useMemo(() => {
     // Calculate total number of prompts

@@ -107,3 +107,9 @@ export type StatAnalysis = {
     interactions: InteractionStatAnalysis[];
     residuals: Residual[];
 }
+
+export type StatResult = {
+    analysisType: string;
+    result: any;
+    description: string;
+}

@@ -4,14 +4,14 @@ import { PromptFactor } from '@/lib/types/analysis';
 interface PromptFactorEditorProps {
   factors: PromptFactor[];
   onChange: (factors: PromptFactor[]) => void;
-  promptCovariates?: string[];
+  promptNoise?: string[]; // Renamed from promptCovariates
   promptFunction?: (factors: string[], variable: string) => string;
 }
 
 export const PromptFactorEditor: React.FC<PromptFactorEditorProps> = ({
   factors,
   onChange,
-  promptCovariates = ["COVARIATE TEXT HERE"],
+  promptNoise = ["NOISE TEXT HERE"], // Renamed from promptCovariates
   promptFunction = (factors, variable) => `${factors.join("\n")}\n${variable}`,
 }) => {
   const [newFactorName, setNewFactorName] = useState('');
@@ -131,12 +131,12 @@ export const PromptFactorEditor: React.FC<PromptFactorEditorProps> = ({
     return combinations;
   };
 
-  // Generate all prompts for all combinations and covariates
+  // Generate all prompts for all combinations and noise variables
   const generateAllPrompts = () => {
     const combinations = generateAllPromptCombinations();
     const allPrompts: Array<{ 
       combination: string; 
-      covariate: string; 
+      noise: string; // Renamed from covariate
       prompt: string 
     }> = [];
 
@@ -144,11 +144,11 @@ export const PromptFactorEditor: React.FC<PromptFactorEditorProps> = ({
       const factorPrompts = combination.map(c => c.prompt);
       const combinationString = combination.map(c => `${c.factorName}: ${c.levelName}`).join(", ");
       
-      for (const covariate of (promptCovariates.length > 0 ? promptCovariates : ["PROMPT COVARIATE TEXT HERE."])) {
-        const fullPrompt = promptFunction(factorPrompts, covariate);
+      for (const noise of (promptNoise.length > 0 ? promptNoise : ["PROMPT NOISE TEXT HERE."])) {
+        const fullPrompt = promptFunction(factorPrompts, noise);
         allPrompts.push({
           combination: combinationString,
-          covariate,
+          noise, // Renamed from covariate
           prompt: fullPrompt
         });
       }
@@ -296,8 +296,8 @@ export const PromptFactorEditor: React.FC<PromptFactorEditorProps> = ({
                         <span className="text-violet-600">{item.combination}</span>
                       </div>
                       <div className="mb-2">
-                        <span className="font-medium text-violet-800">Covariate:</span>{" "}
-                        <span className="text-violet-600">{item.covariate}</span>
+                        <span className="font-medium text-violet-800">Noise:</span>{" "}
+                        <span className="text-violet-600">{item.noise}</span>
                       </div>
                       <div>
                         <span className="font-medium text-violet-800">Prompt:</span>

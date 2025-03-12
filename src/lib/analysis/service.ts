@@ -47,7 +47,7 @@ export class AnalysisService {
         // Get all possible combinations of prompt factors
         const combinations = this.generateCombinations();
         // Calculate total prompts per model: combinations × promptCovariates
-        const totalPromptsPerModel = combinations.length * this.config.promptCovariates.length;
+        const totalPromptsPerModel = combinations.length * this.config.promptNoise.length;
         const totalPrompts = this.config.models.length * totalPromptsPerModel;
         
         this.progress = {
@@ -76,7 +76,7 @@ export class AnalysisService {
 
     private calculateTotalPrompts(): number {
         const combinations = this.generateCombinations();
-        return this.config.models.length * combinations.length * this.config.promptCovariates.length;
+        return this.config.models.length * combinations.length * this.config.promptNoise.length;
     }
 
     private initializeResultVariablesProgress(results: AnalysisResult[]) {
@@ -129,8 +129,8 @@ export class AnalysisService {
                     const llm = LLMProviderFactory.getProvider(model.provider);
                     const modelProgress = this.progress.modelProgress[model.name];
 
-                    for (let promptIdx = 0; promptIdx < this.config.promptCovariates.length && !modelProgress.disabled; promptIdx++) {
-                        const promptVariable = this.config.promptCovariates[promptIdx];
+                    for (let promptIdx = 0; promptIdx < this.config.promptNoise.length && !modelProgress.disabled; promptIdx++) {
+                        const promptVariable = this.config.promptNoise[promptIdx];
 
                         for (const combination of combinations) {
                             if (modelProgress.disabled) break;

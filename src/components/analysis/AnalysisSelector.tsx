@@ -67,9 +67,9 @@ export const AnalysisSelector: React.FC<AnalysisSelectorProps> = ({
             </div>
 
             <div className="mb-6">
-                <h3 className="text-lg font-semibold mb-2">Sample Questions</h3>
+                <h3 className="text-lg font-semibold mb-2">Prompt Noise Variables</h3>
                 <div className="text-sm text-gray-600 space-y-1">
-                    {config.promptCovariates.map((variable, index) => (
+                    {config.promptNoise.map((variable, index) => (
                         <div key={index}>{variable}</div>
                     ))}
                 </div>

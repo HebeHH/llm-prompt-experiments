@@ -16,11 +16,13 @@ import { BarGraph } from './graphs/BarGraph';
 import { StackedBarGraph } from './graphs/StackedBarGraph';
 import { GroupedBarGraph } from './graphs/GroupedBarGraph';
 import { RadarGraph } from './graphs/RadarGraph';
-import { BoxPlotGraph } from './graphs/BoxPlotGraph'
+import { BoxPlotGraph } from './graphs/BoxPlotGraph';
 import { HistogramGraph } from './graphs/HistogramGraph';
 import { ResponseModal } from './ResponseModal';
 import { StatisticalInfo } from './StatisticalInfo';
 import { v4 as uuidv4 } from 'uuid';
+import { saveResults } from '@/lib/utils/configStorage';
+import { StatResult } from '@/lib/types/statistics';
 
 interface ResultsVisualizationProps {
     data: AnalysisData;
@@ -99,10 +101,12 @@ const AddChartModal: React.FC<{
 export const ResultsVisualization: React.FC<ResultsVisualizationProps> = ({ data }) => {
     const { categorical, numerical } = getAvailableAxes(data);
     const [showAddModal, setShowAddModal] = useState(false);
+    const [showSaveModal, setShowSaveModal] = useState(false);
     const [selectedResponse, setSelectedResponse] = useState<string | null>(null);
     const [sortConfig, setSortConfig] = useState<SortConfig | null>(null);
     const [showRawResults, setShowRawResults] = useState(false);
     const [showStatisticalAnalysis, setShowStatisticalAnalysis] = useState(true);
+    const [resultName, setResultName] = useState(data.config.name || 'Unnamed Results');
     const [graphs, setGraphs] = useState<GraphConfig[]>(() => {
         // Start with a default bar graph
         const baseConfig = DEFAULT_GRAPH_CONFIGS.bar;
@@ -290,7 +294,7 @@ export const ResultsVisualization: React.FC<ResultsVisualizationProps> = ({ data
                     prompt: level.prompt
                 }))
             })),
-            promptCovariates: data.config.promptCovariates,
+            promptCovariates: data.config.promptNoise,
             responseVariables: data.config.responseVariables
         };
 
@@ -300,16 +304,96 @@ export const ResultsVisualization: React.FC<ResultsVisualizationProps> = ({ data
         };
     };
 
+    // Save Results Modal
+    const SaveResultsModal = () => (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white p-6 rounded-lg shadow-xl max-w-md w-full">
+                <h3 className="text-lg font-semibold mb-4">Save Results</h3>
+                <p className="mb-4 text-gray-600">
+                    Save these analysis results for later viewing. The results will be stored in your browser.
+                </p>
+                <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Results Name
+                    </label>
+                    <input
+                        type="text"
+                        value={resultName}
+                        onChange={(e) => setResultName(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-violet-500"
+                        placeholder="My Analysis Results"
+                    />
+                </div>
+                <div className="flex justify-end space-x-3">
+                    <button
+                        onClick={() => setShowSaveModal(false)}
+                        className="px-4 py-2 text-gray-600 hover:text-gray-800"
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        onClick={() => {
+                            if (!resultName.trim()) {
+                                alert('Please provide a name for your results');
+                                return;
+                            }
+                            
+                            // Get statistics data
+                            const statsElement = document.getElementById('statistics-container');
+                            let statsData: Record<string, StatResult[]> = {};
+                            
+                            if (statsElement) {
+                                try {
+                                    const statsAttribute = statsElement.getAttribute('data-stats');
+                                    if (statsAttribute) {
+                                        statsData = JSON.parse(statsAttribute);
+                                    }
+                                } catch (e) {
+                                    console.error("Error parsing stats data:", e);
+                                }
+                            }
+                            
+                            // Update the name in the AnalysisData object
+                            const updatedData = {
+                                ...data,
+                                config: {
+                                    ...data.config,
+                                    name: resultName
+                                }
+                            };
+                            
+                            // Save results
+                            saveResults(updatedData, statsData);
+                            setShowSaveModal(false);
+                            alert(`Results "${resultName}" have been saved successfully!`);
+                        }}
+                        className="px-4 py-2 bg-violet-600 text-white rounded hover:bg-violet-700"
+                    >
+                        Save Results
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+
     return (
         <div className="space-y-6">
             <div className="flex justify-between items-center">
                 <h2 className="text-2xl font-bold">Visualisations</h2>
-                <button
-                    onClick={() => setShowAddModal(true)}
-                    className="px-4 py-2 bg-violet-500 text-white rounded hover:bg-violet-600"
-                >
-                    Add New Chart
-                </button>
+                <div className="flex space-x-2">
+                    <button
+                        onClick={() => setShowSaveModal(true)}
+                        className="px-4 py-2 bg-teal-500 text-white rounded hover:bg-teal-600"
+                    >
+                        Save Results
+                    </button>
+                    <button
+                        onClick={() => setShowAddModal(true)}
+                        className="px-4 py-2 bg-violet-500 text-white rounded hover:bg-violet-600"
+                    >
+                        Add New Chart
+                    </button>
+                </div>
             </div>
 
             {graphs.map(graph => {
@@ -353,6 +437,8 @@ export const ResultsVisualization: React.FC<ResultsVisualizationProps> = ({ data
                     onClose={() => setShowAddModal(false)}
                 />
             )}
+
+            {showSaveModal && <SaveResultsModal />}
 
             {selectedResponse && (
                 <ResponseModal

@@ -14,10 +14,16 @@ const eslintConfig = [
 ];
 
 export default [
+  ...eslintConfig,
   {
     rules: {
+      "no-unused-vars": "off",
+      "@typescript-eslint/no-unused-vars": "off",
+      "no-console": "off",
       "@typescript-eslint/no-explicit-any": "off",
-      "@typescript-eslint/no-unused-vars": "warn", // Example: Change unused vars from error to warning
+      "react-hooks/rules-of-hooks": "off",
+      "react-hooks/exhaustive-deps": "off",
+      "@typescript-eslint/no-require-imports": "off"
     },
   },
 ];

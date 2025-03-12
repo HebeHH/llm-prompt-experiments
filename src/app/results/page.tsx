@@ -6,6 +6,7 @@ import { ResultsVisualization } from '@/components/analysis/ResultsVisualization
 import { AnalysisConfig, AnalysisData, ResponseVariable } from '@/lib/types/analysis';
 import { resultAttributes } from '@/lib/constants/resultAttributes';
 import { Header } from '@/components/layout/Header';
+import { loadResultById } from '@/lib/utils/configStorage';
 
 // Default prompt function to use when restoring from localStorage
 const defaultPromptFunction = (promptFactors: string[], variable: string) => {
@@ -60,9 +61,9 @@ const ExperimentConfigView: React.FC<ExperimentConfigViewProps> = ({ config, onC
                     </div>
                 </div>
                 <div>
-                    <h4 className="font-medium mb-2">Prompt Covariates</h4>
+                    <h4 className="font-medium mb-2">Prompt Noise</h4>
                     <ul className="list-decimal list-inside space-y-1 text-gray-600">
-                        {config.promptCovariates.map((variable, index) => (
+                        {config.promptNoise.map((variable, index) => (
                             <li key={index} className="flex items-start">
                                 <span className="mr-2">{index + 1}.</span>
                                 <span className="flex-1">{variable}</span>
@@ -93,7 +94,48 @@ export default function ResultsPage() {
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
-        // Load results from localStorage
+        // Check for selectedResultsId from the homepage
+        const selectedResultsId = localStorage.getItem('selectedResultsId');
+        
+        if (selectedResultsId) {
+            // Load the selected results
+            const loadedResult = loadResultById(selectedResultsId);
+            if (loadedResult) {
+                // Create a function to restore response variable functions
+                const restoreResponseVariableFunctions = (variables: ResponseVariable[]): ResponseVariable[] => {
+                    return variables.map(variable => {
+                        // Find the matching variable in resultAttributes
+                        const matchingAttribute = resultAttributes.find(attr => attr.name === variable.name);
+                        if (matchingAttribute) {
+                            // Restore the function from the matching attribute
+                            return {
+                                ...variable,
+                                function: matchingAttribute.function,
+                                requiresApiCall: matchingAttribute.requiresApiCall
+                            };
+                        }
+                        return variable;
+                    });
+                };
+                
+                // Restore the prompt function and response variable functions
+                const resultsWithFunction: AnalysisData = {
+                    ...loadedResult.results,
+                    config: {
+                        ...loadedResult.results.config,
+                        promptFunction: defaultPromptFunction,
+                        responseVariables: restoreResponseVariableFunctions(loadedResult.results.config.responseVariables)
+                    }
+                };
+                
+                setResults(resultsWithFunction);
+                // Clear the selectedResultsId after loading
+                localStorage.removeItem('selectedResultsId');
+                return;
+            }
+        }
+        
+        // Otherwise, load from analysisResults in localStorage
         const resultsJson = localStorage.getItem('analysisResults');
         
         if (!resultsJson) {
@@ -212,9 +254,9 @@ export default function ResultsPage() {
                                         </div>
                                     </div>
                                     <div>
-                                        <h4 className="font-medium mb-2 text-violet-900">Prompt Covariates</h4>
+                                        <h4 className="font-medium mb-2 text-violet-900">Prompt Noise</h4>
                                         <ul className="list-decimal list-inside space-y-1 text-gray-700">
-                                            {results.config.promptCovariates.map((variable, index) => (
+                                            {results.config.promptNoise.map((variable, index) => (
                                                 <li key={index} className="flex items-start">
                                                     <span className="mr-2">{index + 1}.</span>
                                                     <span className="flex-1">{variable}</span>

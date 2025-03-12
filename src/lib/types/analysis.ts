@@ -38,7 +38,7 @@ export interface AnalysisConfig {
     description: string;
     models: LLMModel[];
     promptFactors: PromptFactor[];
-    promptCovariates: string[];
+    promptNoise: string[]; // Renamed from promptCovariates
     responseVariables: ResponseVariable[];
     promptFunction: (categories: string[], variable: string) => string;
 }
