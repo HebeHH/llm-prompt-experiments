@@ -72,6 +72,11 @@ export const exportGraphAsImage = async (
     fileName?: string;
   } = {}
 ): Promise<string> => {
+  // For boxplots, we'll use a different approach to ensure proper rendering
+  if (config.type === 'boxplot') {
+    return exportBoxplotAsImage(data, config, options);
+  }
+
   // Create a container element for the graph
   const container = document.createElement('div');
   const width = options.width || 800;
@@ -113,7 +118,7 @@ export const exportGraphAsImage = async (
     // Render the chart and wait for it to be fully rendered
     await renderChart(chartContainer, data, config);
     
-    // Wait a bit longer to ensure the chart is fully rendered
+    // Wait for rendering
     await new Promise(resolve => setTimeout(resolve, 500));
     
     // Convert the container to an image
@@ -130,6 +135,100 @@ export const exportGraphAsImage = async (
     return dataUrl;
   } catch (error) {
     console.error('Error generating chart image:', error);
+    // Clean up on error
+    document.body.removeChild(container);
+    throw error;
+  }
+};
+
+/**
+ * Special export function for boxplots that captures the actual rendered boxplot
+ */
+const exportBoxplotAsImage = async (
+  data: AnalysisData,
+  config: GraphConfig,
+  options: {
+    title?: string;
+    width?: number;
+    height?: number;
+    fileName?: string;
+  } = {}
+): Promise<string> => {
+  // Find the existing boxplot in the DOM
+  const existingBoxplots = document.querySelectorAll('.recharts-wrapper');
+  let boxplotElement: Element | null = null;
+  
+  // Look for the boxplot that matches our config
+  for (const element of existingBoxplots) {
+    const parentElement = element.closest('.bg-white');
+    if (parentElement) {
+      const titleElement = parentElement.querySelector('input[type="text"]');
+      if (titleElement && (titleElement as HTMLInputElement).value === config.title) {
+        boxplotElement = element;
+        break;
+      }
+    }
+  }
+  
+  if (!boxplotElement) {
+    throw new Error('Could not find the boxplot element in the DOM');
+  }
+  
+  // Create a container for the image
+  const container = document.createElement('div');
+  const width = options.width || 800;
+  const height = options.height || 600;
+  
+  container.style.width = `${width}px`;
+  container.style.height = `${height}px`;
+  container.style.backgroundColor = 'white';
+  container.style.padding = '20px';
+  container.style.position = 'fixed';
+  container.style.left = '0';
+  container.style.top = '0';
+  container.style.zIndex = '-1000';
+  
+  // Create a title element
+  const titleElement = document.createElement('h2');
+  titleElement.textContent = options.title || config.title || generateDefaultTitle(config);
+  titleElement.style.textAlign = 'center';
+  titleElement.style.marginBottom = '20px';
+  titleElement.style.fontFamily = 'sans-serif';
+  titleElement.style.fontSize = '18px';
+  titleElement.style.color = '#333';
+  
+  // Append the title to the container
+  container.appendChild(titleElement);
+  
+  // Clone the boxplot element
+  const boxplotClone = boxplotElement.cloneNode(true) as HTMLElement;
+  boxplotClone.style.width = '100%';
+  boxplotClone.style.height = 'calc(100% - 60px)';
+  
+  // Append the boxplot clone to the container
+  container.appendChild(boxplotClone);
+  
+  // Append the container to the document body
+  document.body.appendChild(container);
+  
+  try {
+    // Wait for rendering
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    // Convert the container to an image
+    const dataUrl = await toPng(container, { 
+      width, 
+      height,
+      backgroundColor: '#ffffff',
+      pixelRatio: 2 // Higher quality
+    });
+    
+    // Clean up
+    document.body.removeChild(container);
+    
+    return dataUrl;
+  } catch (error) {
+    console.error('Error generating boxplot image:', error);
     // Clean up on error
     document.body.removeChild(container);
     throw error;
@@ -181,8 +280,9 @@ const renderChart = async (
         </React.StrictMode>
       );
       
-      // Allow more time for the chart to render
-      setTimeout(resolve, 300);
+      // Allow more time for the chart to render, especially for boxplots
+      const waitTime = config.type === 'boxplot' ? 500 : 300;
+      setTimeout(resolve, waitTime);
     });
   });
 };
@@ -484,11 +584,27 @@ const renderBoxPlotChart = (data: AnalysisData, config: GraphConfig) => {
   // Process data for the chart (similar to BoxPlotGraph.tsx)
   const chartData = processBoxPlotChartData(data, config);
   
-  // Create a simpler representation of boxplots using regular bars and lines
+  // Transform the data for better rendering
+  const transformedData = chartData.map((entry, index) => {
+    // Create a transformed entry with explicit values for each part of the boxplot
+    return {
+      name: entry.name,
+      min: entry.boxPlotData.min,
+      q1: entry.boxPlotData.q1,
+      median: entry.boxPlotData.median,
+      q3: entry.boxPlotData.q3,
+      max: entry.boxPlotData.max,
+      // Add IQR as a separate value for the box
+      iqr: entry.boxPlotData.q3 - entry.boxPlotData.q1,
+      // Add index for positioning
+      index
+    };
+  });
+  
   return (
     <ResponsiveContainer width="100%" height="100%">
       <ComposedChart
-        data={chartData}
+        data={transformedData}
         margin={{ top: 30, left: 50, right: 30, bottom: 60 }}
       >
         <CartesianGrid strokeDasharray="3 3" />
@@ -506,6 +622,7 @@ const renderBoxPlotChart = (data: AnalysisData, config: GraphConfig) => {
           }}
         />
         <YAxis
+          domain={['auto', 'auto']}
           label={{ 
             value: config.yAxis.label,
             angle: -90,
@@ -514,61 +631,91 @@ const renderBoxPlotChart = (data: AnalysisData, config: GraphConfig) => {
         />
         <Tooltip 
           formatter={(value: any, name: string) => {
-            if (typeof value === 'object') {
-              return [`Min: ${value.min}, Q1: ${value.q1}, Median: ${value.median}, Q3: ${value.q3}, Max: ${value.max}`, name];
+            if (name === 'Box') {
+              const item = transformedData.find(d => d.iqr === value);
+              if (item) {
+                return [`Min: ${item.min}, Q1: ${item.q1}, Median: ${item.median}, Q3: ${item.q3}, Max: ${item.max}`, name];
+              }
             }
             return [value, name];
           }}
         />
         <Legend verticalAlign="top" height={36} />
         
-        {/* Render min-max range as a line */}
-        {chartData.map((entry, index) => (
+        {/* Min-Max whiskers */}
+        {transformedData.map((entry, index) => (
           <React.Fragment key={`boxplot-${index}`}>
-            {/* Min-Max Line */}
+            {/* Vertical line from min to max */}
             <Line
-              dataKey={(item) => item.boxPlotData.min}
+              dataKey="min"
+              data={[entry]}
               stroke="#3B82F6"
-              dot={false}
-              activeDot={false}
               isAnimationActive={false}
-              name={`${entry.name} Min`}
-              style={{ opacity: 0 }}
+              name="Min"
+              hide={true} // Hide from legend
             />
             <Line
-              dataKey={(item) => item.boxPlotData.max}
+              dataKey="max"
+              data={[entry]}
               stroke="#3B82F6"
-              dot={false}
-              activeDot={false}
               isAnimationActive={false}
-              name={`${entry.name} Max`}
-              style={{ opacity: 0 }}
+              name="Max"
+              hide={true} // Hide from legend
             />
             
-            {/* Q1-Q3 Box as a Bar */}
-            <Bar
-              dataKey={(item) => item.boxPlotData.q3 - item.boxPlotData.q1}
-              name={`${entry.name} IQR`}
-              fill="#93C5FD"
-              minPointSize={2}
+            {/* Horizontal line at min */}
+            <Line
+              dataKey="min"
+              data={[
+                { ...entry, name: `${entry.name}-left`, x: index - 0.2 },
+                { ...entry, name: `${entry.name}-right`, x: index + 0.2 }
+              ]}
+              stroke="#3B82F6"
               isAnimationActive={false}
-              barSize={30}
-              stackId={`stack-${index}`}
-              style={{ opacity: 0.8 }}
+              name="Min Line"
+              hide={true} // Hide from legend
             />
             
-            {/* Median Line */}
+            {/* Horizontal line at max */}
             <Line
-              dataKey={(item) => item.boxPlotData.median}
-              stroke="#1E40AF"
-              strokeWidth={2}
-              dot={false}
-              activeDot={false}
+              dataKey="max"
+              data={[
+                { ...entry, name: `${entry.name}-left`, x: index - 0.2 },
+                { ...entry, name: `${entry.name}-right`, x: index + 0.2 }
+              ]}
+              stroke="#3B82F6"
               isAnimationActive={false}
-              name={`${entry.name} Median`}
-              style={{ opacity: 0.8 }}
+              name="Max Line"
+              hide={true} // Hide from legend
             />
           </React.Fragment>
+        ))}
+        
+        {/* Q1-Q3 boxes */}
+        <Bar
+          dataKey="iqr"
+          fill="#93C5FD"
+          stroke="#3B82F6"
+          name="Box"
+          isAnimationActive={false}
+          barSize={40}
+        />
+        
+        {/* Median lines */}
+        {transformedData.map((entry, index) => (
+          <Line
+            key={`median-${index}`}
+            data={[
+              { ...entry, name: `${entry.name}-left`, x: index - 0.2, y: entry.median },
+              { ...entry, name: `${entry.name}-right`, x: index + 0.2, y: entry.median }
+            ]}
+            dataKey="y"
+            stroke="#1E40AF"
+            strokeWidth={2}
+            isAnimationActive={false}
+            name="Median"
+            hide={true} // Hide from legend
+          />
         ))}
       </ComposedChart>
     </ResponsiveContainer>
