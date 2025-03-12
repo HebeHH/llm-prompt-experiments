@@ -209,6 +209,22 @@ Preferably the data axes should just be pulled from the top of the relevant data
 
 The user should be able to add and remove these two graphs. Let's start with just these two types of graph for now, but be aware that we'll add more types of graphs later. We may even add one with 2 numerical axes, for scatter plots, so be able to handle that (it would just use the first two result attributes).
 
+## Graph Images
+
+Currently, we're just creating graph/chart visualisations for display in the web UI. This is working great, and they look very good. However, we're going to want to add the ability to get these graphs as images. We'll want these images for two purposes:
+1. User can download the graph image
+2. Injecting the image into a report that the user can download
+
+For the second part, we'll next turn our hand to generating markdown reports, and we'll want to be able to inject the graph images into the markdown report before the user downloads them as PDFs. We're not generating the markdown report yet, but we are creating the graph images that will be injected into them, so keep in mind that we'll need the images to form part of a larger document instead of just downloading them immediately. 
+
+I really like the look of our current graphs, so just getting an image that looks like them is the main thing. We also don't want to have repeated code if unnecessary - we'd like to be able to add new types of graphs (or edit the look) in one place for both the UI graphs and the graph images.
+
+So we'll need function(s) to take in the data axes and return an image. Your choice whether we have one function for each graph type, or one function that can handle all graph types. This function should also optionally take in a title - if no title provided, just use 'data axes vs data axes' type thing as the title. Happy for this function to take in a file/image name (for download, and for identifying the image in the report) or for that to be assigned afterwards - but we do want to be able to assign it a name. 
+
+Let's start off with creating this ability for our graphs, and then in the UI add a `download graph image` button to the BaseGraph component, that will download the currently displayed graph as an image (getting the graph type, data axes and title from the user's current graph configuration). The downloaded graph image should NOT have the X Axis/Y Axis dropdowns that are part of the basegraph component.
+
+
+
 # Done
 * Created ExperimentCreator component with all necessary sections
 * Created ModelSelector component with filtering and sorting capabilities
