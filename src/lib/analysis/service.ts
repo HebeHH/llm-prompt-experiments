@@ -70,7 +70,8 @@ export class AnalysisService {
             };
         });
 
-        this.onProgress(this.progress);
+        // Create a deep copy to avoid reference issues
+        this.onProgress(JSON.parse(JSON.stringify(this.progress)));
     }
 
     private calculateTotalPrompts(): number {
@@ -87,18 +88,27 @@ export class AnalysisService {
                 completed: 0,
                 failed: 0
             };
-            this.onProgress({ ...this.progress });
+            // Create a deep copy to avoid reference issues
+            this.onProgress(JSON.parse(JSON.stringify(this.progress)));
         }
     }
 
     private updateResultVariablesProgress(success: boolean) {
         if (this.progress.resultVariablesProgress) {
+            // Create a deep copy of the progress object
+            const updatedProgress = JSON.parse(JSON.stringify(this.progress));
+            
             if (success) {
-                this.progress.resultVariablesProgress.completed++;
+                updatedProgress.resultVariablesProgress.completed++;
             } else {
-                this.progress.resultVariablesProgress.failed++;
+                updatedProgress.resultVariablesProgress.failed++;
             }
-            this.onProgress({ ...this.progress });
+            
+            // Update the internal progress state
+            this.progress = updatedProgress;
+            
+            // Send the updated progress to the callback
+            this.onProgress(updatedProgress);
         }
     }
 
@@ -123,81 +133,27 @@ export class AnalysisService {
                         const promptVariable = this.config.promptCovariates[promptIdx];
 
                         for (const combination of combinations) {
-                            // Skip if model has been disabled due to too many errors
                             if (modelProgress.disabled) break;
 
+                            // Generate the prompt
+                            const promptFactors = combination.map(({ option }) => option.prompt);
+                            const prompt = this.config.promptFunction(promptFactors, promptVariable);
+
                             let success = false;
-                            let backoffTime = INITIAL_BACKOFF_MS;
                             let retryCount = 0;
+                            let backoffTime = INITIAL_BACKOFF_MS;
 
                             while (!success && retryCount < 3) {
                                 try {
-                                    // Get prompts from the current combination
-                                    const categoryPrompts = combination.map(c => c.option.prompt);
-
-                                    // Create the full prompt
-                                    const prompt = this.config.promptFunction(categoryPrompts, promptVariable);
-
-                                    // Get the response
-                                    const llmResponse = await llm.generateResponse(model, prompt);
-
-                                    // Check if there was an error in the response
-                                    if (llmResponse.error) {
-                                        const isRateLimit = llmResponse.error.toLowerCase().includes('rate') || 
-                                                        llmResponse.error.toLowerCase().includes('limit') ||
-                                                        llmResponse.error.toLowerCase().includes('429') ||
-                                                        llmResponse.error.toLowerCase().includes('capacity') ||
-                                                        llmResponse.error.toLowerCase().includes('too many');
-                                        
-                                        // Extract error code if present
-                                        let errorCode = '';
-                                        if (llmResponse.error.includes('429')) errorCode = '429';
-                                        else if (llmResponse.error.includes('403')) errorCode = '403';
-                                        else if (llmResponse.error.includes('401')) errorCode = '401';
-                                        else if (llmResponse.error.includes('500')) errorCode = '500';
-                                        else if (llmResponse.error.includes('502')) errorCode = '502';
-                                        else if (llmResponse.error.includes('503')) errorCode = '503';
-                                        else if (llmResponse.error.includes('504')) errorCode = '504';
-                                        
-                                        // Track the error
-                                        const errorInfo = {
-                                            message: llmResponse.error,
-                                            timestamp: Date.now(),
-                                            isRateLimit,
-                                            errorCode
-                                        };
-                                        
-                                        modelProgress.errors.push(errorInfo);
-                                        modelProgress.errorCount++;
-                                        modelProgress.consecutiveErrorCount++;
-                                        
-                                        console.error(`Error from ${model.name}: ${llmResponse.error}`);
-                                        
-                                        // Check if we've hit the max error count (total or consecutive)
-                                        if (modelProgress.errorCount >= MAX_TOTAL_ERROR_COUNT || 
-                                            modelProgress.consecutiveErrorCount >= MAX_CONSECUTIVE_ERROR_COUNT) {
-                                            console.error(`Disabling model ${model.name} due to too many errors (${modelProgress.errorCount} total, ${modelProgress.consecutiveErrorCount} consecutive)`);
-                                            modelProgress.disabled = true;
-                                            modelProgress.failed += (modelProgress.total - modelProgress.completed - modelProgress.failed);
-                                            this.onProgress({ ...this.progress });
-                                            break;
-                                        }
-                                        
-                                        // If it's a rate limit error, implement exponential backoff
-                                        if (isRateLimit) {
-                                            console.log(`Rate limit hit for ${model.name}, backing off for ${backoffTime/1000} seconds`);
-                                            await new Promise(resolve => setTimeout(resolve, backoffTime));
-                                            backoffTime *= 2; // Exponential backoff
-                                            retryCount++;
-                                            continue;
-                                        } else {
-                                            // For non-rate limit errors, mark as failed and move on
-                                            modelProgress.failed++;
-                                            this.progress.completedPrompts++;
-                                            this.onProgress({ ...this.progress });
-                                            break;
-                                        }
+                                    // If we're retrying, wait for the backoff time
+                                    if (retryCount > 0) {
+                                        await new Promise(resolve => setTimeout(resolve, backoffTime));
+                                        // Increase backoff time for next retry (exponential backoff)
+                                        backoffTime *= 2;
                                     }
+
+                                    retryCount++;
+                                    const llmResponse = await llm.generateResponse(model, prompt);
 
                                     // If we got here, we have a valid response
                                     // Reset consecutive error count on success
@@ -226,9 +182,17 @@ export class AnalysisService {
 
                                     results.push(result);
                                     success = true;
-                                    modelProgress.completed++;
-                                    this.progress.completedPrompts++;
-                                    this.onProgress({ ...this.progress });
+                                    
+                                    // Create a deep copy of the progress object
+                                    const updatedProgress = JSON.parse(JSON.stringify(this.progress));
+                                    updatedProgress.modelProgress[model.name].completed++;
+                                    updatedProgress.completedPrompts++;
+                                    
+                                    // Update the internal progress state
+                                    this.progress = updatedProgress;
+                                    
+                                    // Send the updated progress to the callback
+                                    this.onProgress(updatedProgress);
                                 } catch (error) {
                                     // This should rarely happen since the LLM providers catch their own errors
                                     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -244,12 +208,13 @@ export class AnalysisService {
                                     else if (errorMessage.includes('503')) errorCode = '503';
                                     else if (errorMessage.includes('504')) errorCode = '504';
                                     
-                                    // Track the error
-                                    const isRateLimit = errorMessage.toLowerCase().includes('rate') || 
-                                                    errorMessage.toLowerCase().includes('limit') ||
-                                                    errorMessage.toLowerCase().includes('429') ||
-                                                    errorMessage.toLowerCase().includes('capacity') ||
-                                                    errorMessage.toLowerCase().includes('too many');
+                                    // Check if it's a rate limit error
+                                    const isRateLimit = errorMessage.toLowerCase().includes('rate limit') || 
+                                                        errorMessage.includes('429') || 
+                                                        errorMessage.toLowerCase().includes('too many requests');
+                                    
+                                    // Create a deep copy of the progress object
+                                    const updatedProgress = JSON.parse(JSON.stringify(this.progress));
                                     
                                     const errorInfo = {
                                         message: errorMessage,
@@ -258,55 +223,55 @@ export class AnalysisService {
                                         errorCode
                                     };
                                     
-                                    modelProgress.errors.push(errorInfo);
-                                    modelProgress.errorCount++;
-                                    modelProgress.consecutiveErrorCount++;
+                                    updatedProgress.modelProgress[model.name].errors.push(errorInfo);
+                                    updatedProgress.modelProgress[model.name].errorCount++;
+                                    updatedProgress.modelProgress[model.name].consecutiveErrorCount++;
                                     
                                     // Check if we've hit the max error count (total or consecutive)
-                                    if (modelProgress.errorCount >= MAX_TOTAL_ERROR_COUNT || 
-                                        modelProgress.consecutiveErrorCount >= MAX_CONSECUTIVE_ERROR_COUNT) {
-                                        console.error(`Disabling model ${model.name} due to too many errors (${modelProgress.errorCount} total, ${modelProgress.consecutiveErrorCount} consecutive)`);
-                                        modelProgress.disabled = true;
-                                        modelProgress.failed += (modelProgress.total - modelProgress.completed - modelProgress.failed);
-                                        this.onProgress({ ...this.progress });
+                                    if (updatedProgress.modelProgress[model.name].errorCount >= MAX_TOTAL_ERROR_COUNT || 
+                                        updatedProgress.modelProgress[model.name].consecutiveErrorCount >= MAX_CONSECUTIVE_ERROR_COUNT) {
+                                        console.error(`Disabling model ${model.name} due to too many errors (${updatedProgress.modelProgress[model.name].errorCount} total, ${updatedProgress.modelProgress[model.name].consecutiveErrorCount} consecutive)`);
+                                        updatedProgress.modelProgress[model.name].disabled = true;
+                                        updatedProgress.modelProgress[model.name].failed += (updatedProgress.modelProgress[model.name].total - updatedProgress.modelProgress[model.name].completed - updatedProgress.modelProgress[model.name].failed);
+                                        
+                                        // Update the internal progress state
+                                        this.progress = updatedProgress;
+                                        
+                                        // Send the updated progress to the callback
+                                        this.onProgress(updatedProgress);
                                         break;
                                     }
                                     
-                                    // If it's a rate limit error, implement exponential backoff
-                                    if (isRateLimit) {
-                                        console.log(`Rate limit hit for ${model.name}, backing off for ${backoffTime/1000} seconds`);
-                                        await new Promise(resolve => setTimeout(resolve, backoffTime));
-                                        backoffTime *= 2; // Exponential backoff
-                                        retryCount++;
-                                    } else {
-                                        // For non-rate limit errors, mark as failed and move on
-                                        modelProgress.failed++;
-                                        this.progress.completedPrompts++;
-                                        this.onProgress({ ...this.progress });
-                                        break;
+                                    // Update the internal progress state
+                                    this.progress = updatedProgress;
+                                    
+                                    // Send the updated progress to the callback
+                                    this.onProgress(updatedProgress);
+                                    
+                                    // If we've reached the max retries, mark this prompt as failed
+                                    if (retryCount >= 3) {
+                                        // Create a deep copy of the progress object
+                                        const finalProgress = JSON.parse(JSON.stringify(this.progress));
+                                        finalProgress.modelProgress[model.name].failed++;
+                                        
+                                        // Update the internal progress state
+                                        this.progress = finalProgress;
+                                        
+                                        // Send the updated progress to the callback
+                                        this.onProgress(finalProgress);
                                     }
                                 }
-                            }
-                            
-                            // If we've tried 3 times and still failed, mark as failed
-                            if (!success && !modelProgress.disabled) {
-                                modelProgress.failed++;
-                                this.progress.completedPrompts++;
-                                this.onProgress({ ...this.progress });
                             }
                         }
                     }
                 } catch (error) {
-                    // Catch any errors at the model level to prevent them from bubbling up
-                    console.error(`Fatal error processing model ${model.name}:`, error);
+                    console.error(`Fatal error for model ${model.name}:`, error);
                 }
             }));
         } catch (error) {
-            // Catch any errors at the Promise.all level to prevent them from bubbling up
-            console.error("Fatal error in runAnalysis:", error);
+            console.error("Fatal error in LLM responses:", error);
         }
 
-        // Step 2: Calculate result variables
         this.initializeResultVariablesProgress(results);
 
         try {
@@ -353,19 +318,35 @@ export class AnalysisService {
     }
 
     private generateCombinations() {
-        const combinations: Array<Array<{ categoryName: string; option: { name: string; prompt: string } }>> = [[]];
+        // If no prompt factors, return an empty array
+        if (this.config.promptFactors.length === 0) {
+            return [[]];
+        }
 
-        this.config.promptFactors.forEach(category => {
-            const temp: typeof combinations = [];
-            combinations.forEach(combo => {
-                category.levels.forEach(option => {
-                    temp.push([...combo, { categoryName: category.name, option }]);
+        // Generate all possible combinations of prompt factors
+        const combinations: Array<Array<{ categoryName: string; option: { name: string; prompt: string } }>> = [];
+
+        const generateCombinationsRecursive = (
+            currentIndex: number,
+            currentCombination: Array<{ categoryName: string; option: { name: string; prompt: string } }>
+        ) => {
+            if (currentIndex === this.config.promptFactors.length) {
+                combinations.push([...currentCombination]);
+                return;
+            }
+
+            const currentFactor = this.config.promptFactors[currentIndex];
+            for (const option of currentFactor.levels) {
+                currentCombination.push({
+                    categoryName: currentFactor.name,
+                    option: { name: option.name, prompt: option.prompt }
                 });
-            });
-            combinations.length = 0;
-            combinations.push(...temp);
-        });
+                generateCombinationsRecursive(currentIndex + 1, currentCombination);
+                currentCombination.pop();
+            }
+        };
 
+        generateCombinationsRecursive(0, []);
         return combinations;
     }
 } 

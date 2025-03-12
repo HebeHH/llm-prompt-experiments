@@ -82,6 +82,8 @@ const SortableHeader: React.FC<{
 
 interface StatisticalInfoProps {
     data: AnalysisData;
+    isCollapsed?: boolean;
+    onToggleCollapse?: () => void;
 }
 
 // Component for displaying a single pairwise comparison
@@ -224,7 +226,7 @@ const MainEffectEnhancedInfoWithDefaultState: React.FC<{
             
             {isOpen && (
                 <div className="p-4">
-                    <p className="mb-4 text-gray-700 text-sm">{effect.enhancedInfo.naturalLanguageDescription}</p>
+                    <p className="mb-4 text-gray-700 text-md">{effect.enhancedInfo.naturalLanguageDescription}</p>
                     
                     <h5 className="font-medium text-violet-800 mb-2">Level Means</h5>
                     <div className="overflow-x-auto mb-4">
@@ -303,7 +305,7 @@ const InteractionEnhancedInfoWithDefaultState: React.FC<{
             
             {isOpen && (
                 <div className="p-4">
-                    <p className="mb-4 text-gray-700 text-sm">{interaction.enhancedInfo.naturalLanguageDescription}</p>
+                    <p className="mb-4 text-gray-700 text-md">{interaction.enhancedInfo.naturalLanguageDescription}</p>
                     
                     <h5 className="font-medium text-violet-800 mb-2">Combination Means</h5>
                     <div className="overflow-x-auto mb-4">
@@ -357,7 +359,11 @@ const InteractionEnhancedInfoWithDefaultState: React.FC<{
 };
 
 // Main component for displaying statistical information
-export const StatisticalInfo: React.FC<StatisticalInfoProps> = ({ data }) => {
+export const StatisticalInfo: React.FC<StatisticalInfoProps> = ({ 
+    data, 
+    isCollapsed = false,
+    onToggleCollapse
+}) => {
     // Perform statistical analysis
     const analysis = performStatisticalAnalysis(data);
     
@@ -450,12 +456,20 @@ export const StatisticalInfo: React.FC<StatisticalInfoProps> = ({ data }) => {
     };
     
     return (
-        <div className="bg-white rounded-xl shadow-xl overflow-hidden mb-8">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-teal-200 bg-teal-800">
+        <div className={`bg-white shadow-xl overflow-hidden mb-8 ${isCollapsed ? 'rounded-t-xl' : 'rounded-xl'}`}>
+            <div 
+                className="border-b flex items-center border-teal-200 px-6 py-4 bg-teal-800 justify-between cursor-pointer hover:bg-teal-900 rounded-t-xl"
+                onClick={onToggleCollapse}
+            >
                 <h2 className="text-xl font-semibold text-teal-50">Statistical Analysis</h2>
+                {onToggleCollapse && (
+                    <span className="text-teal-50 transform transition-transform duration-200" style={{ transform: isCollapsed ? 'rotate(0deg)' : 'rotate(180deg)' }}>
+                        ▼
+                    </span>
+                )}
             </div>
             
-            <div className="p-6 space-y-6">
+            <div className={`${isCollapsed ? 'hidden' : 'block'} p-6 space-y-6`}>
                 {/* Significant Effects Details */}
                 <div className="border rounded-lg border-teal-600 overflow-hidden">
                     <div 
