@@ -363,12 +363,12 @@ export const ResultsVisualization: React.FC<ResultsVisualizationProps> = ({ data
             {/* Statistical Analysis Section */}
             <StatisticalInfo data={data} />
 
-            <div className="mt-8">
+            <div className="mt-8 rounded-xl shadow-xl">
                 <div 
-                    className="flex items-center justify-between mb-4 cursor-pointer hover:bg-gray-50 p-2 rounded"
+                    className="border-b  flex items-center border-teal-200 px-6 py-4  bg-teal-800 justify-between mb-4 cursor-pointer hover:bg-teal-900 p-2 rounded-t-xl"
                     onClick={() => setShowRawResults(!showRawResults)}
                 >
-                    <h3 className="text-lg font-semibold">Raw Results</h3>
+                    <h3 className="text-xl font-semibold text-teal-50 ">Raw Results</h3>
                     <div className="flex items-center space-x-4">
                         {showRawResults && (
                             <div className="flex space-x-2">
@@ -410,7 +410,7 @@ export const ResultsVisualization: React.FC<ResultsVisualizationProps> = ({ data
                                 </button>
                             </div>
                         )}
-                        <span className="text-gray-500 transform transition-transform duration-200" style={{ transform: showRawResults ? 'rotate(180deg)' : 'rotate(0deg)' }}>
+                        <span className="text-teal-50  transform transition-transform duration-200" style={{ transform: showRawResults ? 'rotate(180deg)' : 'rotate(0deg)' }}>
                             ▼
                         </span>
                     </div>

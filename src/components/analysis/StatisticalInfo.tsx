@@ -202,21 +202,21 @@ const MainEffectEnhancedInfoWithDefaultState: React.FC<{
     if (!effect.enhancedInfo) return null;
     
     return (
-        <div className="mb-4 border border-teal-600 rounded-lg overflow-hidden bg-white">
+        <div className="mb-4 border border-teal-300 rounded-lg overflow-hidden bg-white">
             <div 
-                className="flex justify-between items-center p-4 bg-teal-600 cursor-pointer"
+                className="flex justify-between items-center p-4 bg-teal-200 cursor-pointer hover:bg-teal-300"
                 onClick={() => setIsOpen(!isOpen)}
             >
-                <h4 className="font-medium text-violet-50">
+                <h4 className="font-medium text-teal-900">
                     Main Effect: <span className="font-bold">{effect.factorName}</span> on {effect.responseVariable}
                 </h4>
-                <div className="flex items-center space-x-4 text-white">
+                <div className="flex items-center space-x-4 text-teal-900">
                     <div className="text-sm">
-                        <span className="font-medium text-violet-100">p-value:</span> {effect.significanceInfo.pValue < 0.001 ? "<0.001" : effect.significanceInfo.pValue.toFixed(4)}
+                        <span className="font-bold text-violet-600">p-value:</span> {effect.significanceInfo.pValue < 0.001 ? "<0.001" : effect.significanceInfo.pValue.toFixed(4)}
                         <span className="mx-2">|</span>
-                        <span className="font-medium text-violet-100">η²:</span> {effect.effectMeaningfulness.etaSquared.toFixed(4)}
+                        <span className="font-bold text-violet-600">η²:</span> {effect.effectMeaningfulness.etaSquared.toFixed(4)}
                     </div>
-                    <span className="text-gray-200 transform transition-transform duration-200" style={{ transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}>
+                    <span className="text-teal-600 transform transition-transform duration-200" style={{ transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}>
                         ▼
                     </span>
                 </div>
@@ -281,21 +281,21 @@ const InteractionEnhancedInfoWithDefaultState: React.FC<{
     if (!interaction.enhancedInfo) return null;
     
     return (
-        <div className="mb-4 border border-teal-600 rounded-lg overflow-hidden bg-white">
+        <div className="mb-4 border border-teal-300 rounded-lg overflow-hidden bg-white">
             <div 
-                 className="flex justify-between items-center p-4 bg-teal-600 cursor-pointer"
+                 className="flex justify-between items-center p-4 bg-teal-200 cursor-pointer hover:bg-teal-300"
                 onClick={() => setIsOpen(!isOpen)}
             >
-                <h4 className="font-medium text-violet-50">
+                <h4 className="font-medium text-teal-900">
                     {interaction.numWays}-Way Interaction: <span className="font-bold">{interaction.factors.join(' × ')}</span> on {interaction.responseVariable}
                 </h4>
-                <div className="flex items-center space-x-4 text-white">
+                <div className="flex items-center space-x-4 text-teal-900">
                     <div className="text-sm">
-                        <span className="font-medium text-violet-100">p-value:</span> {interaction.significanceInfo.pValue < 0.001 ? "<0.001" : interaction.significanceInfo.pValue.toFixed(4)}
+                        <span className="font-bold text-violet-600">p-value:</span> {interaction.significanceInfo.pValue < 0.001 ? "<0.001" : interaction.significanceInfo.pValue.toFixed(4)}
                         <span className="mx-2">|</span>
-                        <span className="font-medium text-violet-100">partial η²:</span> {interaction.effectMeaningfulness.etaSquared.toFixed(4)}
+                        <span className="font-bold text-violet-600">partial η²:</span> {interaction.effectMeaningfulness.etaSquared.toFixed(4)}
                     </div>
-                    <span className="text-gray-200 transform transition-transform duration-200" style={{ transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}>
+                    <span className="text-teal-600 transform transition-transform duration-200" style={{ transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}>
                         ▼
                     </span>
                 </div>
@@ -451,25 +451,25 @@ export const StatisticalInfo: React.FC<StatisticalInfoProps> = ({ data }) => {
     
     return (
         <div className="bg-white rounded-xl shadow-xl overflow-hidden mb-8">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-teal-200 bg-teal-100">
-                <h2 className="text-xl font-semibold text-teal-900">Statistical Analysis</h2>
+            <div className="flex items-center justify-between px-6 py-4 border-b border-teal-200 bg-teal-800">
+                <h2 className="text-xl font-semibold text-teal-50">Statistical Analysis</h2>
             </div>
             
             <div className="p-6 space-y-6">
                 {/* Significant Effects Details */}
-                <div className="border rounded-lg overflow-hidden">
+                <div className="border rounded-lg border-teal-600 overflow-hidden">
                     <div 
-                        className="flex justify-between items-center p-4 bg-violet-100 cursor-pointer"
+                        className="flex justify-between items-center p-4 bg-teal-600 cursor-pointer hover:bg-teal-700"
                         onClick={() => setShowSignificantEffects(!showSignificantEffects)}
                     >
-                        <h3 className="text-lg font-semibold text-violet-900">
+                        <h3 className="text-lg font-semibold text-teal-50">
                             Statistically Significant Effects ({totalSignificantEffects})
                         </h3>
                         <div className="flex items-center space-x-2">
-                            <div className="text-sm text-violet-700">
+                            <div className="text-sm font-bold text-violet-50">
                                 {significantMainEffectsCount} main effects, {significantInteractionsCount} interactions
                             </div>
-                            <span className="text-gray-500 transform transition-transform duration-200" style={{ transform: showSignificantEffects ? 'rotate(180deg)' : 'rotate(0deg)' }}>
+                            <span className="text-teal-100 transform transition-transform duration-200" style={{ transform: showSignificantEffects ? 'rotate(180deg)' : 'rotate(0deg)' }}>
                                 ▼
                             </span>
                         </div>
@@ -482,15 +482,15 @@ export const StatisticalInfo: React.FC<StatisticalInfoProps> = ({ data }) => {
                 </div>
                 
                 {/* All Results Card */}
-                <div className="border rounded-lg overflow-hidden">
+                <div className="border border-teal-600  rounded-lg overflow-hidden">
                     <div 
-                        className="flex justify-between items-center p-4 bg-violet-100 cursor-pointer"
+                        className="flex justify-between items-center p-4 bg-teal-600 cursor-pointer hover:bg-teal-700"
                         onClick={() => setShowAllResults(!showAllResults)}
                     >
-                        <h3 className="text-lg font-semibold text-violet-900">
+                        <h3 className="text-lg font-semibold text-teal-50">
                             All Results
                         </h3>
-                        <span className="text-gray-500 transform transition-transform duration-200" style={{ transform: showAllResults ? 'rotate(180deg)' : 'rotate(0deg)' }}>
+                        <span className="text-teal-100 transform transition-transform duration-200" style={{ transform: showAllResults ? 'rotate(180deg)' : 'rotate(0deg)' }}>
                             ▼
                         </span>
                     </div>
