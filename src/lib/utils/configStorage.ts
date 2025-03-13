@@ -4,6 +4,9 @@ import { LLMProvider } from '@/lib/types/llm';
 import { StatResult } from '@/lib/types/statistics';
 import { getApiKeys, saveApiKeysToStorage } from './apiKeyManager';
 
+// Check if code is running in browser environment
+const isBrowser = typeof window !== 'undefined';
+
 export type ExtendedProvider = LLMProvider | 'jigsaw';
 
 // Default prompt function to use when restoring from localStorage
@@ -97,39 +100,46 @@ export const restoreConfigFromStorage = (savedConfig: SerializedConfig): Analysi
     };
 };
 
-// Save the current working configuration
+// Save current config to localStorage
 export const saveCurrentConfig = (config: AnalysisConfig): void => {
-    const configForStorage = prepareConfigForStorage(config);
-    localStorage.setItem('experimentConfig', JSON.stringify(configForStorage));
-    localStorage.setItem('usingDefaultPromptFunction', 'true');
+    if (!isBrowser) return;
+    
+    const serializedConfig = prepareConfigForStorage(config);
+    localStorage.setItem('currentConfig', JSON.stringify(serializedConfig));
 };
 
-// Load the current working configuration
+// Load current config from localStorage
 export const loadCurrentConfig = (): AnalysisConfig | null => {
-    const savedConfig = localStorage.getItem('experimentConfig');
-    if (!savedConfig) return null;
+    if (!isBrowser) return null;
     
     try {
+        const savedConfig = localStorage.getItem('currentConfig');
+        if (!savedConfig) return null;
+        
         const parsedConfig = JSON.parse(savedConfig) as SerializedConfig;
         return restoreConfigFromStorage(parsedConfig);
-    } catch (e) {
-        console.error("Error parsing saved config:", e);
+    } catch (error) {
+        console.error('Error loading current config:', error);
         return null;
     }
 };
 
-// Save API keys - updated to use our centralized manager
+// Save API keys to localStorage
 export const saveApiKeys = (keys: Record<ExtendedProvider, string>): void => {
+    if (!isBrowser) return;
     saveApiKeysToStorage(keys);
 };
 
-// Load API keys - updated to use our centralized manager
+// Load API keys from localStorage
 export const loadApiKeys = (): Record<ExtendedProvider, string> => {
+    if (!isBrowser) return {} as Record<ExtendedProvider, string>;
     return getApiKeys();
 };
 
-// Save a named configuration
+// Save a named configuration to localStorage
 export const saveNamedConfig = (config: AnalysisConfig): void => {
+    if (!isBrowser) return;
+    
     const configId = crypto.randomUUID();
     const now = new Date().toISOString();
     
@@ -163,8 +173,10 @@ export const saveNamedConfig = (config: AnalysisConfig): void => {
     localStorage.setItem('savedConfigurations', JSON.stringify(savedConfigs));
 };
 
-// Load all saved configurations
+// Load saved configurations from localStorage
 export const loadSavedConfigs = (): SavedConfiguration[] => {
+    if (!isBrowser) return [];
+    
     const savedConfigs = localStorage.getItem('savedConfigurations');
     if (!savedConfigs) return [];
     
@@ -179,6 +191,8 @@ export const loadSavedConfigs = (): SavedConfiguration[] => {
 
 // Load a specific configuration by ID
 export const loadConfigById = (configId: string): AnalysisConfig | null => {
+    if (!isBrowser) return null;
+    
     const savedConfigs = loadSavedConfigs();
     const foundConfig = savedConfigs.find(config => config.id === configId);
     
@@ -187,8 +201,10 @@ export const loadConfigById = (configId: string): AnalysisConfig | null => {
     return restoreConfigFromStorage(foundConfig.config as SerializedConfig);
 };
 
-// Delete a saved configuration
+// Delete a configuration by ID
 export const deleteConfig = (configId: string): void => {
+    if (!isBrowser) return;
+    
     const savedConfigs = localStorage.getItem('savedConfigurations');
     if (!savedConfigs) return;
     
@@ -212,8 +228,10 @@ export const deleteConfig = (configId: string): void => {
 
 // Functions for handling analysis results
 
-// Save analysis results
+// Save results to localStorage
 export const saveResults = (data: AnalysisData, stats?: Record<string, StatResult[]>): void => {
+    if (!isBrowser) return;
+    
     const resultsId = crypto.randomUUID();
     const now = new Date().toISOString();
     
@@ -246,8 +264,10 @@ export const saveResults = (data: AnalysisData, stats?: Record<string, StatResul
     localStorage.setItem('savedResults', JSON.stringify(savedResults));
 };
 
-// Load all saved results
+// Load saved results from localStorage
 export const loadSavedResults = (): SavedResults[] => {
+    if (!isBrowser) return [];
+    
     const savedResults = localStorage.getItem('savedResults');
     if (!savedResults) return [];
     
@@ -262,6 +282,8 @@ export const loadSavedResults = (): SavedResults[] => {
 
 // Load a specific result by ID
 export const loadResultById = (resultId: string): { results: AnalysisData, stats?: Record<string, StatResult[]> } | null => {
+    if (!isBrowser) return null;
+    
     const savedResults = loadSavedResults();
     const foundResult = savedResults.find(result => result.id === resultId);
     
@@ -273,8 +295,10 @@ export const loadResultById = (resultId: string): { results: AnalysisData, stats
     };
 };
 
-// Delete a saved result
+// Delete a result by ID
 export const deleteResult = (resultId: string): void => {
+    if (!isBrowser) return;
+    
     const savedResults = localStorage.getItem('savedResults');
     if (!savedResults) return;
     
