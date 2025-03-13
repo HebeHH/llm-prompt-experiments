@@ -22,6 +22,16 @@ export default function ProgressPage() {
     const [progress, setProgress] = useState<AnalysisProgress | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [isAnalysisStarted, setIsAnalysisStarted] = useState(false);
+    const [now, setNow] = useState<number>(Date.now());
+
+    // Update the current time every second to update backoff countdowns
+    useEffect(() => {
+        const timer = setInterval(() => {
+            setNow(Date.now());
+        }, 1000);
+        
+        return () => clearInterval(timer);
+    }, []);
 
     useEffect(() => {
         const runAnalysis = async () => {
@@ -125,6 +135,9 @@ export default function ProgressPage() {
                 localStorage.setItem('analysisResults', JSON.stringify(resultsForStorage));
                 localStorage.setItem('usingDefaultPromptFunction', 'true');
                 
+                // Clear any previously selected results ID to ensure we load the fresh results
+                localStorage.removeItem('selectedResultsId');
+                
                 // Navigate to results page
                 router.push('/results');
             } catch (error) {
@@ -138,6 +151,13 @@ export default function ProgressPage() {
 
     const scrollToTop = () => {
         window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    // Helper function to format backoff time remaining
+    const formatBackoffRemaining = (endsAt: number): string => {
+        const remainingMs = Math.max(0, endsAt - now);
+        const seconds = Math.ceil(remainingMs / 1000);
+        return `${seconds}s`;
     };
 
     return (
@@ -169,7 +189,7 @@ export default function ProgressPage() {
                                         </div>
                                         <div className="h-3 bg-violet-100 rounded-full overflow-hidden">
                                             <div
-                                                className="h-full bg-teal-500 transition-all duration-500 ease-in-out"
+                                                className="h-full bg-teal-300 transition-all duration-500 ease-in-out"
                                                 style={{
                                                     width: `${(progress.completedPrompts / progress.totalPrompts) * 100}%`
                                                 }}
@@ -237,13 +257,25 @@ export default function ProgressPage() {
                                                         {stats.failed > 0 && `${stats.failed} skipped, `}
                                                         {stats.disabled ? 
                                                             <span className="font-medium">Model disabled</span> : 
+                                                            stats.backingOff ? 
+                                                                <span className="font-medium text-amber-600">
+                                                                    Backing off - waiting {formatBackoffRemaining(stats.backoffEndsAt)}
+                                                                </span> :
                                                             stats.consecutiveErrorCount > 0 ? 
-                                                                <span>Backing off</span> : 
+                                                                <span>
+                                                                    Backing off{stats.errors.some(e => e.isRateLimit) ? ' (rate limits)' : ''}
+                                                                    {stats.errors.some(e => e.isRateLimit) && 
+                                                                        <span className="ml-1 text-amber-600">
+                                                                            {stats.consecutiveErrorCount === 1 ? '10s' : 
+                                                                             stats.consecutiveErrorCount === 2 ? '20s' : '40s+'}
+                                                                        </span>
+                                                                    }
+                                                                </span> : 
                                                                 stats.resumedAfterError ? 
                                                                     <span>Successfully resumed</span> : 
                                                                     <span>Processing</span>
                                                         }
-                                                        {stats.consecutiveErrorCount > 0 && 
+                                                        {stats.consecutiveErrorCount > 0 && !stats.backingOff && 
                                                             <span className="block italic mt-1">{stats.consecutiveErrorCount} consecutive error{stats.consecutiveErrorCount !== 1 ? 's' : ''}</span>
                                                         }
                                                     </div>
@@ -253,6 +285,8 @@ export default function ProgressPage() {
                                                         {(() => {
                                                             // Count errors by code
                                                             const errorCounts: Record<string, number> = {};
+                                                            const rateLimitCount = stats.errors.filter(e => e.isRateLimit).length;
+                                                            
                                                             stats.errors.forEach(error => {
                                                                 const code = error.errorCode || (error.isRateLimit ? 'Rate limit' : 'Unknown');
                                                                 errorCounts[code] = (errorCounts[code] || 0) + 1;
@@ -275,6 +309,18 @@ export default function ProgressPage() {
                                                                 </div>
                                                             ));
                                                         })()}
+                                                        
+                                                        {/* Show when the last rate limit error occurred */}
+                                                        {stats.errors.some(e => e.isRateLimit) && (
+                                                            <div className="mt-1 italic">
+                                                                Last rate limit: {new Date(
+                                                                    Math.max(...stats.errors.filter(e => e.isRateLimit).map(e => e.timestamp))
+                                                                ).toLocaleTimeString()}
+                                                                <span className="ml-2 text-amber-600">
+                                                                    (Strict sequential processing with exponential backoff)
+                                                                </span>
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 </div>
                                             )}

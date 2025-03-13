@@ -1,6 +1,11 @@
 import { ExtendedProvider } from './configStorage';
 
 /**
+ * Check if code is running in browser environment
+ */
+const isBrowser = typeof window !== 'undefined';
+
+/**
  * Centralized API key management utility
  * 
  * Priority order:
@@ -21,18 +26,20 @@ export const getApiKeys = (): Record<ExtendedProvider, string> => {
   };
 
   // Try to load from localStorage (lowest priority)
-  try {
-    const savedKeys = localStorage.getItem('apiKeys');
-    if (savedKeys) {
-      const parsedKeys = JSON.parse(savedKeys);
-      Object.keys(parsedKeys).forEach(key => {
-        if (key in keys && parsedKeys[key]) {
-          keys[key as ExtendedProvider] = parsedKeys[key];
-        }
-      });
+  if (isBrowser) {
+    try {
+      const savedKeys = localStorage.getItem('apiKeys');
+      if (savedKeys) {
+        const parsedKeys = JSON.parse(savedKeys);
+        Object.keys(parsedKeys).forEach(key => {
+          if (key in keys && parsedKeys[key]) {
+            keys[key as ExtendedProvider] = parsedKeys[key];
+          }
+        });
+      }
+    } catch (error) {
+      console.error('Error loading API keys from localStorage:', error);
     }
-  } catch (error) {
-    console.error('Error loading API keys from localStorage:', error);
   }
 
   // Apply environment variables (medium priority)
@@ -57,10 +64,13 @@ export const getApiKeys = (): Record<ExtendedProvider, string> => {
 
 // Save API keys to localStorage
 export const saveApiKeysToStorage = (keys: Record<ExtendedProvider, string>): void => {
+  if (!isBrowser) return;
+  
   try {
     // Get current keys from localStorage
     const savedKeysJson = localStorage.getItem('apiKeys');
-    let currentStoredKeys: Record<ExtendedProvider, string> = {
+
+    const currentStoredKeys: Record<ExtendedProvider, string> = {
       anthropic: '',
       google: '',
       openai: '',
