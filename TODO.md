@@ -157,6 +157,11 @@ We'll need to keep these images handy to use in the report generation step.
 - Add markdown report generation with embedded graph images
 - Use more interesting colors in the UI
 - Add comprehensive validation messages for all input fields
+- add prices to the model cards in the Model tab of /create
+- add total price to the pricing predictor component
+- model tab of /create should always sort the unavailable models/providers to the bottom
+- Clicking "New Experiment" is loading the experiment with the last saved configuration; it should load with default/no configuration instead.
+
 
 ## Recent improvement ideas
 

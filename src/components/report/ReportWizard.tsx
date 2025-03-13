@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AnalysisData } from '@/lib/types/analysis';
 import { StatAnalysis } from '@/lib/types/statistics';
 import ManualConfigStep from './steps/ManualConfigStep';
@@ -35,6 +35,7 @@ const ReportWizard: React.FC<ReportWizardProps> = ({ analysisData, statResults }
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [viewingStep, setViewingStep] = useState<WizardStep | null>(null);
 
   const handleConfigComplete = (config: ReportConfig) => {
     setReportConfig(config);
@@ -80,29 +81,74 @@ const ReportWizard: React.FC<ReportWizardProps> = ({ analysisData, statResults }
     setCurrentStep('report-compilation');
   };
 
-  const renderCurrentStep = () => {
-    switch (currentStep) {
+  // Function to check if a step is completed
+  const isStepCompleted = (step: WizardStep): boolean => {
+    switch (step) {
+      case 'manual-config':
+        return !!reportConfig;
+      case 'outline-generation':
+        return !!reportOutline;
+      case 'outline-confirmation':
+        return !!reportOutline && currentStep !== 'outline-generation';
+      case 'graph-selection':
+        return Object.keys(reportBuilder.graphImages).length > 0;
+      case 'section-generation':
+        return Object.keys(reportBuilder.sections).length > 0;
+      case 'report-compilation':
+        return currentStep === 'report-compilation';
+      default:
+        return false;
+    }
+  };
+
+  // Function to handle step navigation
+  const handleStepClick = (step: WizardStep) => {
+    // Only allow navigation to completed steps or the current step
+    if (isStepCompleted(step) || step === currentStep) {
+      if (step === currentStep) {
+        // If clicking the current step, clear the viewing state
+        setViewingStep(null);
+      } else {
+        // Otherwise, set the viewing state to the clicked step
+        setViewingStep(step);
+      }
+    }
+  };
+
+  // Function to return to the current step
+  const handleReturnToCurrent = () => {
+    setViewingStep(null);
+  };
+
+  const renderStep = () => {
+    // If viewing a previous step, render that step in read-only mode
+    const stepToRender = viewingStep || currentStep;
+    
+    switch (stepToRender) {
       case 'manual-config':
         return (
           <ManualConfigStep 
             analysisData={analysisData}
             statResults={statResults}
-            onComplete={handleConfigComplete}
+            onComplete={viewingStep ? undefined : handleConfigComplete}
+            readOnly={!!viewingStep}
           />
         );
       case 'outline-generation':
         return reportBackgroundData ? (
           <OutlineGenerationStep 
             reportBackgroundData={reportBackgroundData}
-            onComplete={handleOutlineGenerated}
-            onError={setError}
+            onComplete={viewingStep ? undefined : handleOutlineGenerated}
+            onError={viewingStep ? undefined : setError}
+            readOnly={!!viewingStep}
           />
         ) : null;
       case 'outline-confirmation':
         return reportOutline ? (
           <OutlineConfirmationStep 
             reportOutline={reportOutline}
-            onComplete={handleOutlineConfirmed}
+            onComplete={viewingStep ? undefined : handleOutlineConfirmed}
+            readOnly={!!viewingStep}
           />
         ) : null;
       case 'graph-selection':
@@ -112,8 +158,9 @@ const ReportWizard: React.FC<ReportWizardProps> = ({ analysisData, statResults }
             reportBackgroundData={reportBackgroundData}
             analysisData={analysisData}
             statResults={statResults}
-            onComplete={handleGraphSelectionComplete}
-            onError={setError}
+            onComplete={viewingStep ? undefined : handleGraphSelectionComplete}
+            onError={viewingStep ? undefined : setError}
+            readOnly={!!viewingStep}
           />
         ) : null;
       case 'section-generation':
@@ -122,8 +169,9 @@ const ReportWizard: React.FC<ReportWizardProps> = ({ analysisData, statResults }
             reportOutline={reportOutline}
             reportBackgroundData={reportBackgroundData}
             graphImages={reportBuilder.graphImages}
-            onComplete={handleSectionGenerationComplete}
-            onError={setError}
+            onComplete={viewingStep ? undefined : handleSectionGenerationComplete}
+            onError={viewingStep ? undefined : setError}
+            readOnly={!!viewingStep}
           />
         ) : null;
       case 'report-compilation':
@@ -131,7 +179,8 @@ const ReportWizard: React.FC<ReportWizardProps> = ({ analysisData, statResults }
           <ReportCompilationStep 
             reportBuilder={reportBuilder}
             reportConfig={reportConfig!}
-            onError={setError}
+            onError={viewingStep ? undefined : setError}
+            readOnly={!!viewingStep}
           />
         ) : null;
       default:
@@ -152,23 +201,53 @@ const ReportWizard: React.FC<ReportWizardProps> = ({ analysisData, statResults }
               { id: 'graph-selection', name: 'Graphs' },
               { id: 'section-generation', name: 'Content' },
               { id: 'report-compilation', name: 'Final Report' }
-            ].map((step) => (
-              <div
-                key={step.id}
-                className={`px-3 py-2 text-sm font-medium rounded-md ${
-                  currentStep === step.id
-                    ? 'bg-violet-500 text-white'
-                    : 'text-violet-700'
-                }`}
-              >
-                {step.name}
-              </div>
-            ))}
+            ].map((step) => {
+              const stepId = step.id as WizardStep;
+              const isCompleted = isStepCompleted(stepId);
+              const isCurrent = currentStep === stepId;
+              const isViewing = viewingStep === stepId;
+              
+              return (
+                <button
+                  key={step.id}
+                  onClick={() => handleStepClick(stepId)}
+                  disabled={!isCompleted && !isCurrent}
+                  className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                    isViewing
+                      ? 'bg-violet-500 text-white'
+                      : isCurrent
+                      ? 'bg-violet-500 text-white'
+                      : isCompleted
+                      ? 'bg-violet-200 text-violet-800 hover:bg-violet-300'
+                      : 'text-violet-700 opacity-50 cursor-not-allowed'
+                  }`}
+                >
+                  {step.name}
+                  {isCompleted && !isCurrent && !isViewing && (
+                    <span className="ml-1.5 text-xs">✓</span>
+                  )}
+                </button>
+              );
+            })}
           </nav>
         </div>
       </div>
 
       <div className="p-6">
+        {viewingStep && (
+          <div className="mb-4 bg-blue-50 border border-blue-200 rounded-md p-3 flex justify-between items-center">
+            <div className="text-blue-700">
+              <span className="font-medium">Viewing:</span> You are viewing a completed step. No changes will be saved.
+            </div>
+            <button
+              onClick={handleReturnToCurrent}
+              className="px-3 py-1.5 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 text-sm font-medium"
+            >
+              Return to Current Step
+            </button>
+          </div>
+        )}
+        
         {error ? (
           <div className="bg-red-50 border border-red-200 rounded-md p-4 mb-6">
             <div className="flex">
@@ -201,7 +280,7 @@ const ReportWizard: React.FC<ReportWizardProps> = ({ analysisData, statResults }
             <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-violet-500"></div>
           </div>
         ) : (
-          renderCurrentStep()
+          renderStep()
         )}
       </div>
     </div>

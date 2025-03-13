@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AnalysisData } from '@/lib/types/analysis';
 import { StatAnalysis } from '@/lib/types/statistics';
 import { ReportConfig, ReportStyle } from '@/lib/types/report';
@@ -9,13 +9,15 @@ import { getApiKeys, saveApiKeysToStorage } from '@/lib/utils/apiKeyManager';
 interface ManualConfigStepProps {
   analysisData: AnalysisData;
   statResults: StatAnalysis;
-  onComplete: (config: ReportConfig) => void;
+  onComplete?: (config: ReportConfig) => void;
+  readOnly?: boolean;
 }
 
 const ManualConfigStep: React.FC<ManualConfigStepProps> = ({
   analysisData,
   statResults,
-  onComplete
+  onComplete,
+  readOnly = false
 }) => {
   const [config, setConfig] = useState<ReportConfig>({
     title: `Analysis Report: ${analysisData.config.name || 'Experiment'}`,
@@ -33,15 +35,22 @@ const ManualConfigStep: React.FC<ManualConfigStepProps> = ({
     nextSteps: ''
   });
   
-  const [apiKeys, setApiKeys] = useState<Partial<Record<LLMProvider, string>>>(() => {
+  const [apiKeys, setApiKeys] = useState<Partial<Record<LLMProvider, string>>>({
+    openai: '',
+    anthropic: '',
+    google: ''
+  });
+  
+  // Initialize API keys after component mounts (client-side only)
+  useEffect(() => {
     // Get API keys from our centralized manager
     const keys = getApiKeys();
-    return {
+    setApiKeys({
       openai: keys.openai,
       anthropic: keys.anthropic,
       google: keys.google
-    };
-  });
+    });
+  }, []);
   
   const [isValidatingApiKey, setIsValidatingApiKey] = useState(false);
   const [apiKeyValidationResult, setApiKeyValidationResult] = useState<{
@@ -209,19 +218,21 @@ const ManualConfigStep: React.FC<ManualConfigStepProps> = ({
     }
     
     // Call the onComplete callback with the config
-    onComplete(config);
+    onComplete?.(config);
   };
   
   return (
-    <form onSubmit={handleSubmit} className="space-y-8">
+    <div className="space-y-6">
       <div>
         <h3 className="text-lg font-medium text-gray-900">Report Configuration</h3>
         <p className="mt-1 text-sm text-gray-500">
-          Configure the settings for your report generation.
+          {readOnly 
+            ? "Viewing the report configuration settings."
+            : "Configure the settings for your report generation."}
         </p>
       </div>
       
-      <div className="space-y-6">
+      <form onSubmit={handleSubmit} className="space-y-6">
         <div className="bg-white shadow-sm rounded-lg p-6 space-y-6">
           <h4 className="text-md font-medium text-gray-900">Basic Information</h4>
           
@@ -238,6 +249,7 @@ const ManualConfigStep: React.FC<ManualConfigStepProps> = ({
                 onChange={handleInputChange}
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-violet-500 focus:ring-violet-500 sm:text-sm"
                 required
+                disabled={readOnly}
               />
             </div>
             
@@ -253,6 +265,7 @@ const ManualConfigStep: React.FC<ManualConfigStepProps> = ({
                 onChange={handleInputChange}
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-violet-500 focus:ring-violet-500 sm:text-sm"
                 required
+                disabled={readOnly}
               />
             </div>
           </div>
@@ -267,6 +280,7 @@ const ManualConfigStep: React.FC<ManualConfigStepProps> = ({
               value={config.style}
               onChange={handleInputChange}
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-violet-500 focus:ring-violet-500 sm:text-sm"
+              disabled={readOnly}
             >
               <option value="academic">Academic</option>
               <option value="blog">Blog Post</option>
@@ -293,6 +307,7 @@ const ManualConfigStep: React.FC<ManualConfigStepProps> = ({
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-violet-500 focus:ring-violet-500 sm:text-sm"
                 placeholder="Describe the writing style you want for your report..."
                 required={config.style === 'custom'}
+                disabled={readOnly}
               />
             </div>
           )}
@@ -315,12 +330,13 @@ const ManualConfigStep: React.FC<ManualConfigStepProps> = ({
                 className="block w-full rounded-md border-gray-300 shadow-sm focus:border-violet-500 focus:ring-violet-500 sm:text-sm"
                 placeholder="sk-..."
                 required
+                disabled={readOnly}
               />
               <button
                 type="button"
                 onClick={validateApiKey}
                 className="ml-3 inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-violet-500"
-                disabled={isValidatingApiKey}
+                disabled={isValidatingApiKey || readOnly}
               >
                 {isValidatingApiKey ? 'Validating...' : 'Validate'}
               </button>
@@ -354,6 +370,7 @@ const ManualConfigStep: React.FC<ManualConfigStepProps> = ({
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-violet-500 focus:ring-violet-500 sm:text-sm"
               placeholder="Who is this report for?"
               required
+              disabled={readOnly}
             />
           </div>
           
@@ -370,6 +387,7 @@ const ManualConfigStep: React.FC<ManualConfigStepProps> = ({
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-violet-500 focus:ring-violet-500 sm:text-sm"
               placeholder="Why was this experiment conducted? What questions were you trying to answer?"
               required
+              disabled={readOnly}
             />
           </div>
           
@@ -386,6 +404,7 @@ const ManualConfigStep: React.FC<ManualConfigStepProps> = ({
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-violet-500 focus:ring-violet-500 sm:text-sm"
               placeholder="What are the most important findings from this experiment?"
               required
+              disabled={readOnly}
             />
           </div>
           
@@ -402,6 +421,7 @@ const ManualConfigStep: React.FC<ManualConfigStepProps> = ({
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-violet-500 focus:ring-violet-500 sm:text-sm"
               placeholder="What actions or decisions should be taken based on these results?"
               required
+              disabled={readOnly}
             />
           </div>
           
@@ -418,6 +438,7 @@ const ManualConfigStep: React.FC<ManualConfigStepProps> = ({
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-violet-500 focus:ring-violet-500 sm:text-sm"
               placeholder="What future experiments or research should be conducted?"
               required
+              disabled={readOnly}
             />
           </div>
         </div>
@@ -439,6 +460,7 @@ const ManualConfigStep: React.FC<ManualConfigStepProps> = ({
                         checked={config.dataAnalysisFocus.includeMainEffects.includes(effect.factorName)}
                         onChange={() => handleMainEffectToggle(effect.factorName)}
                         className="focus:ring-violet-500 h-4 w-4 text-violet-600 border-gray-300 rounded"
+                        disabled={readOnly}
                       />
                     </div>
                     <div className="ml-3 text-sm">
@@ -471,11 +493,12 @@ const ManualConfigStep: React.FC<ManualConfigStepProps> = ({
                       <div className="flex items-center h-5">
                         <input
                           id={`interaction-${index}`}
-                          name={`interaction-${interactionName}`}
+                          name={`interaction-${interaction.factors.join('-')}`}
                           type="checkbox"
                           checked={config.dataAnalysisFocus.includeInteractions.includes(interactionName)}
                           onChange={() => handleInteractionToggle(interactionName)}
                           className="focus:ring-violet-500 h-4 w-4 text-violet-600 border-gray-300 rounded"
+                          disabled={readOnly}
                         />
                       </div>
                       <div className="ml-3 text-sm">
@@ -499,40 +522,48 @@ const ManualConfigStep: React.FC<ManualConfigStepProps> = ({
           </div>
           
           <div>
-            <div className="flex items-start">
-              <div className="flex items-center h-5">
-                <input
-                  id="discussInsignificantResults"
-                  name="dataAnalysisFocus.discussInsignificantResults"
-                  type="checkbox"
-                  checked={config.dataAnalysisFocus.discussInsignificantResults}
-                  onChange={handleCheckboxChange}
-                  className="focus:ring-violet-500 h-4 w-4 text-violet-600 border-gray-300 rounded"
-                />
+            <fieldset>
+              <legend className="text-sm font-medium text-gray-700">Additional Options</legend>
+              <div className="mt-2">
+                <div className="flex items-start">
+                  <div className="flex items-center h-5">
+                    <input
+                      id="discussInsignificantResults"
+                      name="dataAnalysisFocus.discussInsignificantResults"
+                      type="checkbox"
+                      checked={config.dataAnalysisFocus.discussInsignificantResults}
+                      onChange={handleCheckboxChange}
+                      className="focus:ring-violet-500 h-4 w-4 text-violet-600 border-gray-300 rounded"
+                      disabled={readOnly}
+                    />
+                  </div>
+                  <div className="ml-3 text-sm">
+                    <label htmlFor="discussInsignificantResults" className="font-medium text-gray-700">
+                      Discuss Insignificant Results
+                    </label>
+                    <p className="text-gray-500">
+                      Include discussion of factors and interactions that did not show statistical significance.
+                    </p>
+                  </div>
+                </div>
               </div>
-              <div className="ml-3 text-sm">
-                <label htmlFor="discussInsignificantResults" className="font-medium text-gray-700">
-                  Discuss Insignificant Results
-                </label>
-                <p className="text-gray-500">
-                  Include a section discussing factors and interactions that did not show significant effects.
-                </p>
-              </div>
-            </div>
+            </fieldset>
           </div>
         </div>
-      </div>
-      
-      <div className="flex justify-end">
-        <button
-          type="submit"
-          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-violet-600 hover:bg-violet-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-violet-500"
-        >
-          Continue to Next Step
-        </button>
-      </div>
-    </form>
+        
+        {!readOnly && (
+          <div className="flex justify-end">
+            <button
+              type="submit"
+              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-violet-600 hover:bg-violet-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-violet-500"
+            >
+              Continue to Next Step
+            </button>
+          </div>
+        )}
+      </form>
+    </div>
   );
 };
 
-export default ManualConfigStep; 
+export default ManualConfigStep;

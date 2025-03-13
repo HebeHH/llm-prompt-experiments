@@ -3,14 +3,16 @@ import { ReportOutline, ReportSection, ReportSubsection } from '@/lib/types/repo
 
 interface OutlineConfirmationStepProps {
   reportOutline: ReportOutline;
-  onComplete: (confirmedOutline: ReportOutline) => void;
+  onComplete?: (outline: ReportOutline) => void;
+  readOnly?: boolean;
 }
 
 const OutlineConfirmationStep: React.FC<OutlineConfirmationStepProps> = ({
   reportOutline,
-  onComplete
+  onComplete,
+  readOnly = false
 }) => {
-  const [outline, setOutline] = useState<ReportOutline>({...reportOutline});
+  const [outline, setOutline] = useState<ReportOutline>(reportOutline);
   const [editingTitle, setEditingTitle] = useState(false);
   const [editingAuthor, setEditingAuthor] = useState(false);
   
@@ -224,7 +226,7 @@ const OutlineConfirmationStep: React.FC<OutlineConfirmationStepProps> = ({
   };
   
   const handleSubmit = () => {
-    onComplete(outline);
+    onComplete?.(outline);
   };
   
   return (
@@ -232,222 +234,186 @@ const OutlineConfirmationStep: React.FC<OutlineConfirmationStepProps> = ({
       <div>
         <h3 className="text-lg font-medium text-gray-900">Confirm Report Outline</h3>
         <p className="mt-1 text-sm text-gray-500">
-          Review and edit the generated outline before proceeding. You can add, remove, or reorder sections and subsections.
+          {readOnly 
+            ? "Viewing the confirmed report outline."
+            : "Review and edit the outline before proceeding to the next step."}
         </p>
       </div>
       
-      <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-        {/* Report Title */}
-        <div className="mb-6">
-          {editingTitle ? (
-            <div className="flex items-center">
-              <input
-                type="text"
-                value={outline.title}
-                onChange={handleTitleChange}
-                className="shadow-sm focus:ring-violet-500 focus:border-violet-500 block w-full sm:text-sm border-gray-300 rounded-md"
-              />
-              <button
-                onClick={() => setEditingTitle(false)}
-                className="ml-2 inline-flex items-center p-1 border border-transparent rounded-full shadow-sm text-white bg-violet-600 hover:bg-violet-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-violet-500"
-              >
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-              </button>
-            </div>
-          ) : (
-            <div className="flex items-center">
-              <h2 className="text-xl font-bold text-gray-900">{outline.title}</h2>
-              <button
-                onClick={() => setEditingTitle(true)}
-                className="ml-2 text-gray-400 hover:text-gray-500"
-              >
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                </svg>
-              </button>
-            </div>
-          )}
+      <div className="bg-white border border-gray-200 rounded-md p-4">
+        <div className="mb-4">
+          <label htmlFor="title" className="block text-sm font-medium text-gray-700">
+            Report Title
+          </label>
+          <input
+            type="text"
+            id="title"
+            name="title"
+            value={outline.title}
+            onChange={handleTitleChange}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-violet-500 focus:ring-violet-500 sm:text-sm"
+            disabled={readOnly}
+          />
         </div>
         
-        {/* Author Name */}
-        <div className="mb-6">
-          {editingAuthor ? (
-            <div className="flex items-center">
-              <input
-                type="text"
-                value={outline.authorName}
-                onChange={handleAuthorChange}
-                className="shadow-sm focus:ring-violet-500 focus:border-violet-500 block w-full sm:text-sm border-gray-300 rounded-md"
-              />
-              <button
-                onClick={() => setEditingAuthor(false)}
-                className="ml-2 inline-flex items-center p-1 border border-transparent rounded-full shadow-sm text-white bg-violet-600 hover:bg-violet-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-violet-500"
-              >
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-              </button>
-            </div>
-          ) : (
-            <div className="flex items-center">
-              <p className="text-sm text-gray-500">By {outline.authorName}</p>
-              <button
-                onClick={() => setEditingAuthor(true)}
-                className="ml-2 text-gray-400 hover:text-gray-500"
-              >
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                </svg>
-              </button>
-            </div>
-          )}
-        </div>
-        
-        {/* Sections */}
-        <div className="space-y-6">
+        <div className="space-y-4">
+          <h4 className="text-md font-medium text-gray-900">Sections</h4>
+          
           {outline.sections.map((section, sectionIndex) => (
-            <div key={sectionIndex} className="border border-gray-200 rounded-md p-4">
-              <div className="flex items-center justify-between mb-2">
+            <div key={sectionIndex} className="border border-gray-200 rounded-md p-3">
+              <div className="flex justify-between items-start mb-2">
                 <div className="flex-1">
                   <input
                     type="text"
                     value={section.title}
                     onChange={(e) => handleSectionTitleChange(sectionIndex, e.target.value)}
-                    className="block w-full text-lg font-medium text-gray-900 border-0 border-b border-transparent focus:border-violet-500 focus:ring-0"
+                    className="block w-full rounded-md border-gray-300 shadow-sm focus:border-violet-500 focus:ring-violet-500 sm:text-sm"
+                    disabled={readOnly}
                   />
                 </div>
-                <div className="flex space-x-2">
-                  <button
-                    onClick={() => handleMoveSectionUp(sectionIndex)}
-                    disabled={sectionIndex === 0}
-                    className={`p-1 rounded-full ${sectionIndex === 0 ? 'text-gray-300' : 'text-gray-500 hover:bg-gray-100'}`}
-                  >
-                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-                    </svg>
-                  </button>
-                  <button
-                    onClick={() => handleMoveSectionDown(sectionIndex)}
-                    disabled={sectionIndex === outline.sections.length - 1}
-                    className={`p-1 rounded-full ${sectionIndex === outline.sections.length - 1 ? 'text-gray-300' : 'text-gray-500 hover:bg-gray-100'}`}
-                  >
-                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </button>
-                  <button
-                    onClick={() => handleDeleteSection(sectionIndex)}
-                    className="p-1 rounded-full text-red-500 hover:bg-red-50"
-                  >
-                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
-                  </button>
-                </div>
+                {!readOnly && (
+                  <div className="ml-2 flex space-x-1">
+                    <button
+                      type="button"
+                      onClick={() => handleMoveSectionUp(sectionIndex)}
+                      disabled={sectionIndex === 0}
+                      className="p-1 text-gray-400 hover:text-gray-500"
+                    >
+                      <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clipRule="evenodd" />
+                      </svg>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleMoveSectionDown(sectionIndex)}
+                      disabled={sectionIndex === outline.sections.length - 1}
+                      className="p-1 text-gray-400 hover:text-gray-500"
+                    >
+                      <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 011.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                      </svg>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteSection(sectionIndex)}
+                      className="p-1 text-red-400 hover:text-red-500"
+                    >
+                      <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+                      </svg>
+                    </button>
+                  </div>
+                )}
               </div>
               
-              <div className="mb-4">
+              <div className="mb-3">
                 <textarea
                   value={section.description}
                   onChange={(e) => handleSectionDescriptionChange(sectionIndex, e.target.value)}
+                  className="block w-full rounded-md border-gray-300 shadow-sm focus:border-violet-500 focus:ring-violet-500 sm:text-sm"
                   rows={2}
-                  className="shadow-sm focus:ring-violet-500 focus:border-violet-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                  disabled={readOnly}
                 />
               </div>
               
-              {/* Subsections */}
-              <div className="space-y-3 ml-4">
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <h5 className="text-sm font-medium text-gray-700">Subsections</h5>
+                  {!readOnly && (
+                    <button
+                      type="button"
+                      onClick={() => handleAddSubsection(sectionIndex)}
+                      className="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded text-violet-700 bg-violet-100 hover:bg-violet-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-violet-500"
+                    >
+                      Add Subsection
+                    </button>
+                  )}
+                </div>
+                
                 {section.subsections.map((subsection, subsectionIndex) => (
-                  <div key={subsectionIndex} className="border-l-2 border-violet-100 pl-4 py-2">
-                    <div className="flex items-center justify-between mb-1">
+                  <div key={subsectionIndex} className="border border-gray-100 rounded-md p-2 bg-gray-50">
+                    <div className="flex justify-between items-start mb-2">
                       <div className="flex-1">
                         <input
                           type="text"
                           value={subsection.title}
                           onChange={(e) => handleSubsectionTitleChange(sectionIndex, subsectionIndex, e.target.value)}
-                          className="block w-full text-sm font-medium text-gray-700 border-0 border-b border-transparent focus:border-violet-500 focus:ring-0"
+                          className="block w-full rounded-md border-gray-300 shadow-sm focus:border-violet-500 focus:ring-violet-500 sm:text-sm"
+                          disabled={readOnly}
                         />
                       </div>
-                      <div className="flex space-x-2">
-                        <button
-                          onClick={() => handleMoveSubsectionUp(sectionIndex, subsectionIndex)}
-                          disabled={subsectionIndex === 0}
-                          className={`p-1 rounded-full ${subsectionIndex === 0 ? 'text-gray-300' : 'text-gray-500 hover:bg-gray-100'}`}
-                        >
-                          <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-                          </svg>
-                        </button>
-                        <button
-                          onClick={() => handleMoveSubsectionDown(sectionIndex, subsectionIndex)}
-                          disabled={subsectionIndex === section.subsections.length - 1}
-                          className={`p-1 rounded-full ${subsectionIndex === section.subsections.length - 1 ? 'text-gray-300' : 'text-gray-500 hover:bg-gray-100'}`}
-                        >
-                          <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                          </svg>
-                        </button>
-                        <button
-                          onClick={() => handleDeleteSubsection(sectionIndex, subsectionIndex)}
-                          className="p-1 rounded-full text-red-500 hover:bg-red-50"
-                        >
-                          <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                          </svg>
-                        </button>
-                      </div>
+                      {!readOnly && (
+                        <div className="ml-2 flex space-x-1">
+                          <button
+                            type="button"
+                            onClick={() => handleMoveSubsectionUp(sectionIndex, subsectionIndex)}
+                            disabled={subsectionIndex === 0}
+                            className="p-1 text-gray-400 hover:text-gray-500"
+                          >
+                            <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clipRule="evenodd" />
+                            </svg>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleMoveSubsectionDown(sectionIndex, subsectionIndex)}
+                            disabled={subsectionIndex === section.subsections.length - 1}
+                            className="p-1 text-gray-400 hover:text-gray-500"
+                          >
+                            <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 011.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                            </svg>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteSubsection(sectionIndex, subsectionIndex)}
+                            className="p-1 text-red-400 hover:text-red-500"
+                          >
+                            <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+                            </svg>
+                          </button>
+                        </div>
+                      )}
                     </div>
                     
-                    <div>
-                      <textarea
-                        value={subsection.description}
-                        onChange={(e) => handleSubsectionDescriptionChange(sectionIndex, subsectionIndex, e.target.value)}
-                        rows={2}
-                        className="shadow-sm focus:ring-violet-500 focus:border-violet-500 block w-full sm:text-xs border-gray-300 rounded-md"
-                      />
-                    </div>
+                    <textarea
+                      value={subsection.description}
+                      onChange={(e) => handleSubsectionDescriptionChange(sectionIndex, subsectionIndex, e.target.value)}
+                      className="block w-full rounded-md border-gray-300 shadow-sm focus:border-violet-500 focus:ring-violet-500 sm:text-sm"
+                      rows={2}
+                      disabled={readOnly}
+                    />
                   </div>
                 ))}
-                
-                <div className="mt-2">
-                  <button
-                    onClick={() => handleAddSubsection(sectionIndex)}
-                    className="inline-flex items-center px-2.5 py-1.5 border border-gray-300 shadow-sm text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-violet-500"
-                  >
-                    <svg className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                    </svg>
-                    Add Subsection
-                  </button>
-                </div>
               </div>
             </div>
           ))}
-          
+        </div>
+        
+        {!readOnly && (
           <div className="mt-4">
             <button
+              type="button"
               onClick={handleAddSection}
-              className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-violet-500"
+              className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-violet-700 bg-violet-100 hover:bg-violet-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-violet-500"
             >
-              <svg className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-              </svg>
               Add Section
             </button>
           </div>
-        </div>
+        )}
       </div>
       
-      <div className="flex justify-end">
-        <button
-          onClick={handleSubmit}
-          className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-violet-600 hover:bg-violet-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-violet-500"
-        >
-          Confirm Outline
-        </button>
-      </div>
+      {!readOnly && (
+        <div className="flex justify-end">
+          <button
+            onClick={handleSubmit}
+            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-violet-600 hover:bg-violet-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-violet-500"
+          >
+            Continue to Next Step
+          </button>
+        </div>
+      )}
     </div>
   );
 };

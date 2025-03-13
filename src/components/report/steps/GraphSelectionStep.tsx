@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { AnalysisData } from '@/lib/types/analysis';
 import { StatAnalysis } from '@/lib/types/statistics';
 import { ReportOutline, ReportBackgroundData, GraphImageSpec } from '@/lib/types/report';
@@ -12,8 +12,9 @@ interface GraphSelectionStepProps {
   reportBackgroundData: ReportBackgroundData;
   analysisData: AnalysisData;
   statResults: StatAnalysis;
-  onComplete: (graphImages: Record<string, string>) => void;
-  onError: (error: string) => void;
+  onComplete?: (graphImages: Record<string, string>) => void;
+  onError?: (error: string) => void;
+  readOnly?: boolean;
 }
 
 const GraphSelectionStep: React.FC<GraphSelectionStepProps> = ({
@@ -22,7 +23,8 @@ const GraphSelectionStep: React.FC<GraphSelectionStepProps> = ({
   analysisData,
   statResults,
   onComplete,
-  onError
+  onError,
+  readOnly = false
 }) => {
   const [currentSectionIndex, setCurrentSectionIndex] = useState(0);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -30,18 +32,32 @@ const GraphSelectionStep: React.FC<GraphSelectionStepProps> = ({
   const [graphSpecs, setGraphSpecs] = useState<Record<string, GraphImageSpec[]>>({});
   const [graphImages, setGraphImages] = useState<Record<string, string>>({});
   const [isGeneratingImages, setIsGeneratingImages] = useState(false);
+  const streamContainerRef = React.useRef<HTMLDivElement>(null);
   
   // Initialize graph service
   const graphService = new GraphService(analysisData, statResults);
+  
+  useEffect(() => {
+    if (!readOnly && currentSectionIndex === 0) {
+      generateGraphsForCurrentSection();
+    }
+  }, [currentSectionIndex, readOnly]);
   
   useEffect(() => {
     if (currentSectionIndex < reportOutline.sections.length) {
       generateGraphsForCurrentSection();
     } else {
       // All sections processed, move to the next step
-      onComplete(graphImages);
+      onComplete?.(graphImages);
     }
   }, [currentSectionIndex]);
+  
+  // Auto-scroll to bottom of streaming content
+  useEffect(() => {
+    if (streamContainerRef.current) {
+      streamContainerRef.current.scrollTop = streamContainerRef.current.scrollHeight;
+    }
+  }, [progress]);
   
   const generateGraphsForCurrentSection = async () => {
     const currentSection = reportOutline.sections[currentSectionIndex];
@@ -88,7 +104,7 @@ const GraphSelectionStep: React.FC<GraphSelectionStepProps> = ({
       setCurrentSectionIndex(prev => prev + 1);
     } catch (error) {
       console.error('Error generating graphs:', error);
-      onError(`Error generating graphs: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      onError?.(`Error generating graphs: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setIsGenerating(false);
     }
@@ -114,7 +130,7 @@ const GraphSelectionStep: React.FC<GraphSelectionStepProps> = ({
           }));
         } catch (error) {
           console.error(`Error generating graph image for ${spec.fileName}:`, error);
-          onError(`Error generating graph image for ${spec.fileName}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+          onError?.(`Error generating graph image for ${spec.fileName}: ${error instanceof Error ? error.message : 'Unknown error'}`);
         }
       }
     } finally {
@@ -183,8 +199,13 @@ const GraphSelectionStep: React.FC<GraphSelectionStepProps> = ({
             </div>
             
             {progress && (
-              <div className="bg-gray-50 p-4 rounded border border-gray-200 max-h-96 overflow-y-auto">
-                <pre className="text-xs text-gray-700 whitespace-pre-wrap">{progress}</pre>
+              <div className="bg-gray-50 p-4 rounded border border-gray-200 h-80 overflow-hidden">
+                <div 
+                  ref={streamContainerRef}
+                  className="h-full overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100"
+                >
+                  <pre className="text-xs text-gray-700 whitespace-pre-wrap">{progress}</pre>
+                </div>
               </div>
             )}
           </div>
@@ -260,13 +281,37 @@ const GraphSelectionStep: React.FC<GraphSelectionStepProps> = ({
       <div>
         <h3 className="text-lg font-medium text-gray-900">Graph Selection</h3>
         <p className="mt-1 text-sm text-gray-500">
-          The AI is selecting appropriate graphs for each section of your report.
+          {readOnly 
+            ? "Viewing the graphs selected for each section."
+            : "The AI is selecting and generating graphs for each section of your report."}
         </p>
       </div>
       
       {renderProgress()}
       {renderCurrentSection()}
       {renderCompletedSections()}
+      
+      {!readOnly && !isGenerating && !isGeneratingImages && currentSectionIndex < reportOutline.sections.length && (
+        <div className="flex justify-end">
+          <button
+            onClick={generateGraphsForCurrentSection}
+            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-violet-600 hover:bg-violet-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-violet-500"
+          >
+            Generate Graphs for Current Section
+          </button>
+        </div>
+      )}
+      
+      {!readOnly && !isGenerating && !isGeneratingImages && currentSectionIndex >= reportOutline.sections.length && (
+        <div className="flex justify-end">
+          <button
+            onClick={() => onComplete?.(graphImages)}
+            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-violet-600 hover:bg-violet-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-violet-500"
+          >
+            Continue to Next Step
+          </button>
+        </div>
+      )}
     </div>
   );
 };

@@ -6,22 +6,34 @@ import { getApiKeys } from '@/lib/utils/apiKeyManager';
 
 interface OutlineGenerationStepProps {
   reportBackgroundData: ReportBackgroundData;
-  onComplete: (outline: ReportOutline) => void;
-  onError: (error: string) => void;
+  onComplete?: (outline: ReportOutline) => void;
+  onError?: (error: string) => void;
+  readOnly?: boolean;
 }
 
 const OutlineGenerationStep: React.FC<OutlineGenerationStepProps> = ({
   reportBackgroundData,
   onComplete,
-  onError
+  onError,
+  readOnly = false
 }) => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [progress, setProgress] = useState<string>('');
   const [outline, setOutline] = useState<ReportOutline | null>(null);
+  const streamContainerRef = React.useRef<HTMLDivElement>(null);
   
   useEffect(() => {
-    generateOutline();
-  }, []);
+    if (!readOnly) {
+      generateOutline();
+    }
+  }, [readOnly]);
+  
+  // Auto-scroll to bottom of streaming content
+  useEffect(() => {
+    if (streamContainerRef.current) {
+      streamContainerRef.current.scrollTop = streamContainerRef.current.scrollHeight;
+    }
+  }, [progress]);
   
   const generateOutline = async () => {
     setIsGenerating(true);
@@ -49,10 +61,10 @@ const OutlineGenerationStep: React.FC<OutlineGenerationStepProps> = ({
       );
       
       setOutline(generatedOutline);
-      onComplete(generatedOutline);
+      onComplete?.(generatedOutline);
     } catch (error) {
       console.error('Error generating outline:', error);
-      onError(`Error generating outline: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      onError?.(`Error generating outline: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setIsGenerating(false);
     }
@@ -65,9 +77,11 @@ const OutlineGenerationStep: React.FC<OutlineGenerationStepProps> = ({
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-medium text-gray-900">Generating Report Outline</h3>
+        <h3 className="text-lg font-medium text-gray-900">Report Outline Generation</h3>
         <p className="mt-1 text-sm text-gray-500">
-          The AI is generating an outline for your report based on your configuration.
+          {readOnly 
+            ? "Viewing the generated report outline."
+            : "The AI is generating an outline for your report based on your configuration."}
         </p>
       </div>
       
@@ -82,53 +96,53 @@ const OutlineGenerationStep: React.FC<OutlineGenerationStepProps> = ({
             </div>
             
             {progress && (
-              <div className="bg-white p-4 rounded border border-gray-200 max-h-96 overflow-y-auto">
-                <pre className="text-xs text-gray-700 whitespace-pre-wrap">{progress}</pre>
+              <div className="bg-white p-4 rounded border border-gray-200 h-96 overflow-hidden">
+                <div 
+                  ref={streamContainerRef}
+                  className="h-full overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100"
+                >
+                  <pre className="text-xs text-gray-700 whitespace-pre-wrap">{progress}</pre>
+                </div>
               </div>
             )}
           </div>
         ) : outline ? (
-          <div className="space-y-4">
-            <div className="flex items-center text-green-600">
-              <svg className="h-5 w-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-              </svg>
-              <p className="text-sm font-medium">Outline generated successfully!</p>
-            </div>
-            
-            <div className="bg-white p-4 rounded border border-gray-200">
-              <h4 className="text-md font-medium text-gray-900 mb-2">{outline.title}</h4>
-              <p className="text-sm text-gray-500 mb-4">By {outline.authorName}</p>
-              
-              <div className="space-y-4">
-                {outline.sections.map((section, index) => (
-                  <div key={index} className="border-l-2 border-violet-200 pl-4">
-                    <h5 className="text-sm font-medium text-gray-900">{section.title}</h5>
-                    <p className="text-xs text-gray-500 mt-1">{section.description}</p>
-                    
-                    {section.subsections.length > 0 && (
-                      <div className="mt-2 space-y-2">
-                        {section.subsections.map((subsection, subIndex) => (
-                          <div key={subIndex} className="border-l-2 border-violet-100 pl-3 ml-2">
-                            <h6 className="text-xs font-medium text-gray-800">{subsection.title}</h6>
-                            <p className="text-xs text-gray-500">{subsection.description}</p>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                ))}
+          <div className="space-y-6">
+            <div className="bg-white border border-gray-200 rounded-md p-4">
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Generated Outline</h3>
+              <div className="prose prose-sm max-w-none">
+                <h4 className="text-md font-medium">{outline.title}</h4>
+                <ul className="space-y-2">
+                  {outline.sections.map((section, index) => (
+                    <li key={index}>
+                      <div className="font-medium">{section.title}</div>
+                      <div className="text-sm text-gray-500">{section.description}</div>
+                      {section.subsections.length > 0 && (
+                        <ul className="pl-5 mt-1 space-y-1">
+                          {section.subsections.map((subsection, subIndex) => (
+                            <li key={subIndex}>
+                              <div className="font-medium">{subsection.title}</div>
+                              <div className="text-sm text-gray-500">{subsection.description}</div>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </li>
+                  ))}
+                </ul>
               </div>
             </div>
             
-            <div className="flex justify-end">
-              <button
-                onClick={handleRetry}
-                className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-violet-500"
-              >
-                Regenerate Outline
-              </button>
-            </div>
+            {!readOnly && (
+              <div className="flex justify-end">
+                <button
+                  onClick={() => onComplete?.(outline)}
+                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-violet-600 hover:bg-violet-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-violet-500"
+                >
+                  Continue to Next Step
+                </button>
+              </div>
+            )}
           </div>
         ) : (
           <div className="flex justify-center py-8">

@@ -9,21 +9,25 @@ import { getApiKeys } from '@/lib/utils/apiKeyManager';
 interface ReportCompilationStepProps {
   reportBuilder: ReportBuilder;
   reportConfig: ReportConfig;
-  onError: (error: string) => void;
+  onError?: (error: string) => void;
+  readOnly?: boolean;
 }
 
 const ReportCompilationStep: React.FC<ReportCompilationStepProps> = ({
   reportBuilder,
   reportConfig,
-  onError
+  onError,
+  readOnly = false
 }) => {
   const [compiledReport, setCompiledReport] = useState<CompiledReport | null>(null);
   const [isCompiling, setIsCompiling] = useState(true);
   const [activeTab, setActiveTab] = useState<'preview' | 'markdown'>('preview');
   
   useEffect(() => {
-    compileReport();
-  }, []);
+    if (!readOnly) {
+      compileReport();
+    }
+  }, [readOnly]);
   
   const compileReport = async () => {
     setIsCompiling(true);
@@ -82,7 +86,7 @@ const ReportCompilationStep: React.FC<ReportCompilationStepProps> = ({
       setCompiledReport(report);
     } catch (error) {
       console.error('Error compiling report:', error);
-      onError(`Error compiling report: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      onError?.(`Error compiling report: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setIsCompiling(false);
     }
@@ -144,7 +148,9 @@ const ReportCompilationStep: React.FC<ReportCompilationStepProps> = ({
       <div>
         <h3 className="text-lg font-medium text-gray-900">Final Report</h3>
         <p className="mt-1 text-sm text-gray-500">
-          Your report has been compiled. You can preview it below and download it in various formats.
+          {readOnly 
+            ? "Viewing the final compiled report."
+            : "Your report has been compiled and is ready for download."}
         </p>
       </div>
       

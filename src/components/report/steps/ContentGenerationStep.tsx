@@ -4,7 +4,7 @@ import { createLLMService } from '@/lib/services/llmService';
 import { LLMProvider } from '@/lib/types/llm';
 import { getApiKeys } from '@/lib/utils/apiKeyManager';
 
-interface SectionGenerationStepProps {
+interface ContentGenerationStepProps {
   reportOutline: ReportOutline;
   reportBackgroundData: ReportBackgroundData;
   graphImages: Record<string, string>;
@@ -13,13 +13,13 @@ interface SectionGenerationStepProps {
   readOnly?: boolean;
 }
 
-const SectionGenerationStep: React.FC<SectionGenerationStepProps> = ({
+const ContentGenerationStep: React.FC<ContentGenerationStepProps> = ({
   reportOutline,
   reportBackgroundData,
   graphImages,
   onComplete,
   onError,
-  readOnly = false
+  readOnly
 }) => {
   const [currentSectionIndex, setCurrentSectionIndex] = useState(0);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -28,16 +28,15 @@ const SectionGenerationStep: React.FC<SectionGenerationStepProps> = ({
   const streamContainerRef = useRef<HTMLDivElement>(null);
   
   useEffect(() => {
-    if (!readOnly) {
-      if (currentSectionIndex < reportOutline.sections.length) {
-        generateContentForCurrentSection();
-      } else {
-        // All sections processed, move to the next step
-        onComplete?.(sections);
-      }
+    if (currentSectionIndex < reportOutline.sections.length) {
+      generateContentForCurrentSection();
+    } else {
+      // All sections processed, move to the next step
+      onComplete?.(sections);
     }
-  }, [currentSectionIndex, readOnly]);
+  }, [currentSectionIndex]);
   
+  // Auto-scroll to bottom of streaming content
   useEffect(() => {
     if (streamContainerRef.current) {
       streamContainerRef.current.scrollTop = streamContainerRef.current.scrollHeight;
@@ -260,28 +259,15 @@ const SectionGenerationStep: React.FC<SectionGenerationStepProps> = ({
       <div>
         <h3 className="text-lg font-medium text-gray-900">Content Generation</h3>
         <p className="mt-1 text-sm text-gray-500">
-          {readOnly 
-            ? "Viewing the generated content for each section."
-            : "The AI is generating content for each section of your report."}
+          The AI is generating content for each section of your report.
         </p>
       </div>
       
       {renderProgress()}
       {renderCurrentSection()}
       {renderCompletedSections()}
-      
-      {!readOnly && currentSectionIndex >= reportOutline.sections.length && (
-        <div className="flex justify-end mt-4">
-          <button
-            onClick={() => onComplete?.(sections)}
-            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-violet-600 hover:bg-violet-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-violet-500"
-          >
-            Continue to Next Step
-          </button>
-        </div>
-      )}
     </div>
   );
 };
 
-export default SectionGenerationStep; 
+export default ContentGenerationStep; 
