@@ -154,27 +154,140 @@ const exportBoxplotAsImage = async (
     fileName?: string;
   } = {}
 ): Promise<string> => {
-  // Find the existing boxplot in the DOM
-  const existingBoxplots = document.querySelectorAll('.recharts-wrapper');
-  let boxplotElement: Element | null = null;
-  
-  // Look for the boxplot that matches our config
-  for (const element of existingBoxplots) {
-    const parentElement = element.closest('.bg-white');
-    if (parentElement) {
-      const titleElement = parentElement.querySelector('input[type="text"]');
-      if (titleElement && (titleElement as HTMLInputElement).value === config.title) {
-        boxplotElement = element;
-        break;
+  try {
+    // Find the existing boxplot in the DOM
+    const existingBoxplots = document.querySelectorAll('.recharts-wrapper');
+    let boxplotElement: Element | null = null;
+    
+    // Look for the boxplot that matches our config
+    for (const element of existingBoxplots) {
+      const parentElement = element.closest('.bg-white');
+      if (parentElement) {
+        const titleElement = parentElement.querySelector('input[type="text"]');
+        if (titleElement && (titleElement as HTMLInputElement).value === config.title) {
+          boxplotElement = element;
+          break;
+        }
       }
     }
+    
+    // If no existing boxplot is found, create a temporary one
+    if (!boxplotElement) {
+      console.log('Creating temporary boxplot for', config.title);
+      
+      // Create a temporary container for the boxplot
+      const tempContainer = document.createElement('div');
+      tempContainer.style.width = '800px';
+      tempContainer.style.height = '500px';
+      tempContainer.style.position = 'fixed';
+      tempContainer.style.left = '-9999px'; // Position off-screen
+      tempContainer.style.top = '0';
+      tempContainer.style.backgroundColor = 'white';
+      tempContainer.style.zIndex = '-1000';
+      
+      // Add the temporary container to the DOM
+      document.body.appendChild(tempContainer);
+      
+      // Render the boxplot in the temporary container
+      await renderChart(tempContainer, data, config);
+      
+      // Wait for the boxplot to render
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Convert the container to an image
+      const dataUrl = await toPng(tempContainer, { 
+        width: options.width || 800, 
+        height: options.height || 600,
+        backgroundColor: '#ffffff',
+        pixelRatio: 2
+      });
+      
+      // Clean up
+      document.body.removeChild(tempContainer);
+      
+      return dataUrl;
+    }
+    
+    // If an existing boxplot was found, proceed with the original approach
+    // Create a container for the image
+    const container = document.createElement('div');
+    const width = options.width || 800;
+    const height = options.height || 600;
+    
+    container.style.width = `${width}px`;
+    container.style.height = `${height}px`;
+    container.style.backgroundColor = 'white';
+    container.style.padding = '20px';
+    container.style.position = 'fixed';
+    container.style.left = '0';
+    container.style.top = '0';
+    container.style.zIndex = '-1000';
+    
+    // Create a title element
+    const titleElement = document.createElement('h2');
+    titleElement.textContent = options.title || config.title || generateDefaultTitle(config);
+    titleElement.style.textAlign = 'center';
+    titleElement.style.marginBottom = '20px';
+    titleElement.style.fontFamily = 'sans-serif';
+    titleElement.style.fontSize = '18px';
+    titleElement.style.color = '#333';
+    
+    // Append the title to the container
+    container.appendChild(titleElement);
+    
+    // Clone the boxplot element
+    const boxplotClone = boxplotElement.cloneNode(true) as HTMLElement;
+    boxplotClone.style.width = '100%';
+    boxplotClone.style.height = 'calc(100% - 60px)';
+    
+    // Append the boxplot clone to the container
+    container.appendChild(boxplotClone);
+    
+    // Append the container to the document body
+    document.body.appendChild(container);
+    
+    try {
+      // Wait for rendering
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Convert the container to an image
+      const dataUrl = await toPng(container, { 
+        width, 
+        height,
+        backgroundColor: '#ffffff',
+        pixelRatio: 2 // Higher quality
+      });
+      
+      // Clean up
+      document.body.removeChild(container);
+      
+      return dataUrl;
+    } catch (error) {
+      console.error('Error generating boxplot image:', error);
+      // Clean up on error
+      document.body.removeChild(container);
+      throw error;
+    }
+  } catch (error) {
+    console.error('Error in exportBoxplotAsImage:', error);
+    return createFallbackBoxplotImage(data, config, options);
   }
-  
-  if (!boxplotElement) {
-    throw new Error('Could not find the boxplot element in the DOM');
-  }
-  
-  // Create a container for the image
+};
+
+/**
+ * Creates a fallback image for boxplots when the DOM element can't be found
+ */
+const createFallbackBoxplotImage = async (
+  data: AnalysisData,
+  config: GraphConfig,
+  options: {
+    title?: string;
+    width?: number;
+    height?: number;
+    fileName?: string;
+  } = {}
+): Promise<string> => {
+  // Create a container element for the fallback
   const container = document.createElement('div');
   const width = options.width || 800;
   const height = options.height || 600;
@@ -183,10 +296,10 @@ const exportBoxplotAsImage = async (
   container.style.height = `${height}px`;
   container.style.backgroundColor = 'white';
   container.style.padding = '20px';
-  container.style.position = 'fixed';
-  container.style.left = '0';
-  container.style.top = '0';
-  container.style.zIndex = '-1000';
+  container.style.display = 'flex';
+  container.style.flexDirection = 'column';
+  container.style.alignItems = 'center';
+  container.style.justifyContent = 'center';
   
   // Create a title element
   const titleElement = document.createElement('h2');
@@ -197,24 +310,21 @@ const exportBoxplotAsImage = async (
   titleElement.style.fontSize = '18px';
   titleElement.style.color = '#333';
   
-  // Append the title to the container
+  // Create a message element
+  const messageElement = document.createElement('p');
+  messageElement.textContent = 'Box plot visualization unavailable';
+  messageElement.style.fontFamily = 'sans-serif';
+  messageElement.style.fontSize = '16px';
+  messageElement.style.color = '#666';
+  
+  // Append elements to the container
   container.appendChild(titleElement);
-  
-  // Clone the boxplot element
-  const boxplotClone = boxplotElement.cloneNode(true) as HTMLElement;
-  boxplotClone.style.width = '100%';
-  boxplotClone.style.height = 'calc(100% - 60px)';
-  
-  // Append the boxplot clone to the container
-  container.appendChild(boxplotClone);
+  container.appendChild(messageElement);
   
   // Append the container to the document body
   document.body.appendChild(container);
   
   try {
-    // Wait for rendering
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
     // Convert the container to an image
     const dataUrl = await toPng(container, { 
       width, 
@@ -228,7 +338,7 @@ const exportBoxplotAsImage = async (
     
     return dataUrl;
   } catch (error) {
-    console.error('Error generating boxplot image:', error);
+    console.error('Error generating fallback boxplot image:', error);
     // Clean up on error
     document.body.removeChild(container);
     throw error;

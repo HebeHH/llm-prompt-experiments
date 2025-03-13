@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
-import { LLMProvider } from '@/lib/types/llm';
-
-type ExtendedProvider = LLMProvider | 'jigsaw';
+import { ExtendedProvider } from '@/lib/utils/configStorage';
+import { getApiKeyInfo, saveApiKeysToStorage } from '@/lib/utils/apiKeyManager';
 
 interface ApiKeyManagerProps {
     onApiKeysChange: (keys: Record<ExtendedProvider, string>) => void;
@@ -19,28 +18,22 @@ export const ApiKeyManager: React.FC<ApiKeyManagerProps> = ({
     onApiKeysChange,
     initialApiKeys = {}
 }) => {
-    const [apiKeys, setApiKeys] = useState<ApiKeyRecord>(() => ({
-        anthropic: {
-            value: process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY || initialApiKeys?.anthropic || '',
-            isFromEnv: !!process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY
-        },
-        google: {
-            value: process.env.NEXT_PUBLIC_GOOGLE_API_KEY || initialApiKeys?.google || '',
-            isFromEnv: !!process.env.NEXT_PUBLIC_GOOGLE_API_KEY
-        },
-        openai: {
-            value: process.env.NEXT_PUBLIC_OPENAI_API_KEY || initialApiKeys?.openai || '',
-            isFromEnv: !!process.env.NEXT_PUBLIC_OPENAI_API_KEY
-        },
-        groq: {
-            value: process.env.NEXT_PUBLIC_GROQ_API_KEY || initialApiKeys?.groq || '',
-            isFromEnv: !!process.env.NEXT_PUBLIC_GROQ_API_KEY
-        },
-        jigsaw: {
-            value: process.env.NEXT_PUBLIC_JIGSAW_API_KEY || initialApiKeys?.jigsaw || '',
-            isFromEnv: !!process.env.NEXT_PUBLIC_JIGSAW_API_KEY
-        }
-    }));
+    // Initialize with API keys from our centralized manager
+    const [apiKeys, setApiKeys] = useState<ApiKeyRecord>(() => {
+        const keyInfo = getApiKeyInfo();
+        
+        // Apply any initialApiKeys that were passed in (highest priority)
+        Object.keys(initialApiKeys).forEach(key => {
+            const provider = key as ExtendedProvider;
+            if (initialApiKeys[provider]) {
+                keyInfo[provider].value = initialApiKeys[provider] || '';
+                // If we're explicitly setting a key, it's not from env
+                keyInfo[provider].isFromEnv = false;
+            }
+        });
+        
+        return keyInfo;
+    });
 
     const handleApiKeyChange = (provider: ExtendedProvider, value: string) => {
         const newApiKeys = {
@@ -51,14 +44,18 @@ export const ApiKeyManager: React.FC<ApiKeyManagerProps> = ({
             }
         };
         setApiKeys(newApiKeys);
-
+        
         // Convert to simple key-value pairs and notify parent
         const simpleKeys = Object.entries(newApiKeys).reduce((acc, [key, state]) => ({
             ...acc,
             [key]: state.value
         }), {} as Record<ExtendedProvider, string>);
         
+        // Notify parent of the change
         onApiKeysChange(simpleKeys);
+        
+        // Save to localStorage
+        saveApiKeysToStorage(simpleKeys);
     };
 
     return (
@@ -89,7 +86,7 @@ export const ApiKeyManager: React.FC<ApiKeyManagerProps> = ({
                         />
                         {!state.isFromEnv && state.value && (
                             <p className="text-xs text-gray-500">
-                                API key will be stored in browser session only
+                                API key will be stored in browser localStorage
                             </p>
                         )}
                     </div>

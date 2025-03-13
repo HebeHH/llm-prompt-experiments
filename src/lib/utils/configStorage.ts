@@ -2,6 +2,7 @@ import { AnalysisConfig, ResponseVariable, AnalysisData } from '@/lib/types/anal
 import { resultAttributes } from '@/lib/constants/resultAttributes';
 import { LLMProvider } from '@/lib/types/llm';
 import { StatResult } from '@/lib/types/statistics';
+import { getApiKeys, saveApiKeysToStorage } from './apiKeyManager';
 
 export type ExtendedProvider = LLMProvider | 'jigsaw';
 
@@ -117,22 +118,14 @@ export const loadCurrentConfig = (): AnalysisConfig | null => {
     }
 };
 
-// Save API keys
+// Save API keys - updated to use our centralized manager
 export const saveApiKeys = (keys: Record<ExtendedProvider, string>): void => {
-    localStorage.setItem('apiKeys', JSON.stringify(keys));
+    saveApiKeysToStorage(keys);
 };
 
-// Load API keys
-export const loadApiKeys = (): Record<ExtendedProvider, string> | null => {
-    const savedApiKeys = localStorage.getItem('apiKeys');
-    if (!savedApiKeys) return null;
-    
-    try {
-        return JSON.parse(savedApiKeys);
-    } catch (e) {
-        console.error("Error parsing saved API keys:", e);
-        return null;
-    }
+// Load API keys - updated to use our centralized manager
+export const loadApiKeys = (): Record<ExtendedProvider, string> => {
+    return getApiKeys();
 };
 
 // Save a named configuration

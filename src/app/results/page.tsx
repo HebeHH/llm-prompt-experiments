@@ -1,12 +1,15 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { ResultsVisualization } from '@/components/analysis/ResultsVisualization';
 import { AnalysisConfig, AnalysisData, ResponseVariable } from '@/lib/types/analysis';
 import { resultAttributes } from '@/lib/constants/resultAttributes';
 import { Header } from '@/components/layout/Header';
 import { loadResultById } from '@/lib/utils/configStorage';
+import GenerateReportButton from '@/components/report/GenerateReportButton';
+import { StatAnalysis } from '@/lib/types/statistics';
+import { performStatisticalAnalysis } from '@/lib/analysis/statistics';
 
 // Default prompt function to use when restoring from localStorage
 const defaultPromptFunction = (promptFactors: string[], variable: string) => {
@@ -92,6 +95,24 @@ export default function ResultsPage() {
     const [results, setResults] = useState<AnalysisData | null>(null);
     const [showConfigView, setShowConfigView] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [statResults, setStatResults] = useState<StatAnalysis | null>(null);
+
+    // Create a function to restore response variable functions
+    const restoreResponseVariableFunctions = (variables: ResponseVariable[]): ResponseVariable[] => {
+        return variables.map(variable => {
+            // Find the matching variable in resultAttributes
+            const matchingAttribute = resultAttributes.find(attr => attr.name === variable.name);
+            if (matchingAttribute) {
+                // Restore the function from the matching attribute
+                return {
+                    ...variable,
+                    function: matchingAttribute.function,
+                    requiresApiCall: matchingAttribute.requiresApiCall
+                };
+            }
+            return variable;
+        });
+    };
 
     useEffect(() => {
         // Check for selectedResultsId from the homepage
@@ -101,23 +122,7 @@ export default function ResultsPage() {
             // Load the selected results
             const loadedResult = loadResultById(selectedResultsId);
             if (loadedResult) {
-                // Create a function to restore response variable functions
-                const restoreResponseVariableFunctions = (variables: ResponseVariable[]): ResponseVariable[] => {
-                    return variables.map(variable => {
-                        // Find the matching variable in resultAttributes
-                        const matchingAttribute = resultAttributes.find(attr => attr.name === variable.name);
-                        if (matchingAttribute) {
-                            // Restore the function from the matching attribute
-                            return {
-                                ...variable,
-                                function: matchingAttribute.function,
-                                requiresApiCall: matchingAttribute.requiresApiCall
-                            };
-                        }
-                        return variable;
-                    });
-                };
-                
+                console.log("Loaded result stats:", loadedResult.stats);
                 // Restore the prompt function and response variable functions
                 const resultsWithFunction: AnalysisData = {
                     ...loadedResult.results,
@@ -129,56 +134,69 @@ export default function ResultsPage() {
                 };
                 
                 setResults(resultsWithFunction);
-                // Clear the selectedResultsId after loading
-                localStorage.removeItem('selectedResultsId');
-                return;
+                
+                // Set the statistical results if available
+                if (loadedResult.stats) {
+                    // Check if the stats data has the required structure
+                    const stats = loadedResult.stats;
+                    console.log("Stats structure check:", 
+                        'mainEffects' in stats, 
+                        'interactions' in stats, 
+                        'residuals' in stats
+                    );
+                    if ('mainEffects' in stats && 'interactions' in stats && 'residuals' in stats) {
+                        setStatResults(stats as unknown as StatAnalysis);
+                    } else {
+                        console.error("Stats data doesn't have the required structure");
+                    }
+                } else {
+                    console.log("No stats data available in loaded result");
+                }
+            } else {
+                setError("Selected results not found. Please run the experiment again.");
+            }
+        } else {
+            try {
+                // Try to load from localStorage
+                const savedResults = localStorage.getItem('analysisResults');
+                
+                if (savedResults) {
+                    const parsedResults = JSON.parse(savedResults);
+                    
+                    // Restore the prompt function and response variable functions
+                    const resultsWithFunction: AnalysisData = {
+                        ...parsedResults,
+                        config: {
+                            ...parsedResults.config,
+                            promptFunction: defaultPromptFunction,
+                            responseVariables: restoreResponseVariableFunctions(parsedResults.config.responseVariables)
+                        }
+                    };
+                    
+                    setResults(resultsWithFunction);
+                } else {
+                    setError("No results found. Please run the experiment first.");
+                }
+            } catch (e) {
+                console.error("Error parsing results:", e);
+                setError("Error loading results. Please run the experiment again.");
             }
         }
-        
-        // Otherwise, load from analysisResults in localStorage
-        const resultsJson = localStorage.getItem('analysisResults');
-        
-        if (!resultsJson) {
-            setError("No results found. Please run an experiment first.");
-            return;
-        }
-        
-        try {
-            const parsedResults = JSON.parse(resultsJson);
-            
-            // Create a function to restore response variable functions
-            const restoreResponseVariableFunctions = (variables: ResponseVariable[]): ResponseVariable[] => {
-                return variables.map(variable => {
-                    // Find the matching variable in resultAttributes
-                    const matchingAttribute = resultAttributes.find(attr => attr.name === variable.name);
-                    if (matchingAttribute) {
-                        // Restore the function from the matching attribute
-                        return {
-                            ...variable,
-                            function: matchingAttribute.function,
-                            requiresApiCall: matchingAttribute.requiresApiCall
-                        };
-                    }
-                    return variable;
-                });
-            };
-            
-            // Restore the prompt function and response variable functions
-            const resultsWithFunction: AnalysisData = {
-                ...parsedResults,
-                config: {
-                    ...parsedResults.config,
-                    promptFunction: defaultPromptFunction,
-                    responseVariables: restoreResponseVariableFunctions(parsedResults.config.responseVariables)
-                }
-            };
-            
-            setResults(resultsWithFunction);
-        } catch (e) {
-            console.error("Error parsing results:", e);
-            setError("Error loading results. Please run the experiment again.");
-        }
     }, []);
+
+    // Generate statistical analysis when results are available
+    useEffect(() => {
+        if (results) {
+            try {
+                // Generate statistical analysis
+                const analysis = performStatisticalAnalysis(results);
+                setStatResults(analysis);
+                console.log("Generated statistical analysis:", analysis);
+            } catch (error) {
+                console.error("Error generating statistical analysis:", error);
+            }
+        }
+    }, [results]);
 
     const handleNewExperiment = () => {
         router.push('/create');
@@ -254,24 +272,10 @@ export default function ResultsPage() {
                                         </div>
                                     </div>
                                     <div>
-                                        <h4 className="font-medium mb-2 text-violet-900">Prompt Noise</h4>
-                                        <ul className="list-decimal list-inside space-y-1 text-gray-700">
-                                            {results.config.promptNoise.map((variable, index) => (
-                                                <li key={index} className="flex items-start">
-                                                    <span className="mr-2">{index + 1}.</span>
-                                                    <span className="flex-1">{variable}</span>
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    </div>
-                                    <div>
                                         <h4 className="font-medium mb-2 text-violet-900">Response Variables</h4>
                                         <ul className="list-disc list-inside space-y-1 text-gray-700">
-                                            {results.config.responseVariables.map(attr => (
-                                                <li key={attr.name}>
-                                                    {attr.name}
-                                                    <span className="text-gray-600"> - {attr.description}</span>
-                                                </li>
+                                            {results.config.responseVariables.map(variable => (
+                                                <li key={variable.name}>{variable.name} - {variable.description}</li>
                                             ))}
                                         </ul>
                                     </div>
@@ -284,6 +288,21 @@ export default function ResultsPage() {
                         <div className="bg-white rounded-xl shadow-xl overflow-hidden">
                             <div className="flex items-center justify-between px-6 py-4 border-b border-violet-200 bg-violet-100">
                                 <h2 className="text-xl font-semibold text-violet-900">Results</h2>
+                                {/* Debug info */}
+                                {(() => { 
+                                    console.log("Results available:", !!results, "Stats available:", !!statResults);
+                                    return null;
+                                })()}
+                                {results && statResults ? (
+                                    <GenerateReportButton 
+                                        analysisData={results} 
+                                        statResults={statResults} 
+                                    />
+                                ) : (
+                                    <div className="text-sm text-gray-500">
+                                        {!statResults && "Statistical analysis required for report generation"}
+                                    </div>
+                                )}
                             </div>
                             <div className="p-6">
                                 <ResultsVisualization data={results} />
@@ -302,18 +321,6 @@ export default function ResultsPage() {
                                     Create New Experiment
                                 </button>
                             </div>
-                        </div>
-                    )}
-
-                    {!results && !error && (
-                        <div className="bg-white rounded-xl shadow-xl p-8 text-center">
-                            <div className="animate-pulse">
-                                <div className="h-8 bg-violet-100 rounded w-1/2 mx-auto mb-4"></div>
-                                <div className="h-4 bg-violet-100 rounded w-3/4 mx-auto mb-2"></div>
-                                <div className="h-4 bg-violet-100 rounded w-2/3 mx-auto mb-2"></div>
-                                <div className="h-4 bg-violet-100 rounded w-1/2 mx-auto"></div>
-                            </div>
-                            <p className="mt-6 text-gray-600">Loading results...</p>
                         </div>
                     )}
                 </div>

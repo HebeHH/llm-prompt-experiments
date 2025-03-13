@@ -15,6 +15,7 @@ import {
   SavedConfiguration,
   ExtendedProvider
 } from '@/lib/utils/configStorage';
+import { getApiKeys } from '@/lib/utils/apiKeyManager';
 
 interface ExperimentCreatorProps {
   config?: AnalysisConfig;
@@ -25,13 +26,7 @@ interface ExperimentCreatorProps {
   onApiKeysChange?: (keys: Record<ExtendedProvider, string>) => void;
 }
 
-const defaultApiKeys: Record<ExtendedProvider, string> = {
-  anthropic: process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY || '',
-  google: process.env.NEXT_PUBLIC_GOOGLE_API_KEY || '',
-  openai: process.env.NEXT_PUBLIC_OPENAI_API_KEY || '',
-  groq: process.env.NEXT_PUBLIC_GROQ_API_KEY || '',
-  jigsaw: process.env.NEXT_PUBLIC_JIGSAW_API_KEY || ''
-};
+const defaultApiKeys = getApiKeys();
 
 type WizardStep = {
   id: string;
@@ -152,10 +147,22 @@ export const ExperimentCreator: React.FC<ExperimentCreatorProps> = ({
   }, [config, onConfigChange]);
 
   const handleApiKeysUpdate = useCallback((keys: Record<ExtendedProvider, string>) => {
-    setApiKeys(keys);
-    if (onApiKeysChange) {
-      onApiKeysChange(keys);
-    }
+    // Only update state if the keys have actually changed
+    setApiKeys(prevKeys => {
+      // Check if keys are different from previous keys
+      const hasChanged = Object.entries(keys).some(
+        ([provider, value]) => prevKeys[provider as ExtendedProvider] !== value
+      );
+      
+      // If keys haven't changed, return the previous state to avoid re-render
+      if (!hasChanged) return prevKeys;
+      
+      // Otherwise, update the keys
+      if (onApiKeysChange) {
+        onApiKeysChange(keys);
+      }
+      return keys;
+    });
   }, [onApiKeysChange]);
 
   const steps: WizardStep[] = useMemo(() => [

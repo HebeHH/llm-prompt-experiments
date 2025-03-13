@@ -258,3 +258,13 @@ Start with a simplified version of the report generation process to get feedback
 Add comprehensive error handling and user feedback throughout the process.
 Consider implementing a preview mode for each step so users can see what they're getting.
 - all sounds good. The preview mode should be covered by the streaming implementation, and the ability to edit the report outline.
+
+
+
+## Fixes needed
+- If there's already an API key present, don't ask the user to enter one.
+- The user should be able to edit style prompts. SO if I select `Academic`, it should show me what the existing style prompt for that is (there should be at least a paragraph) and let me edit it.
+- Significant effects aren't showing up as selected
+- I can't select data main effects/interactions individually; I can only select signifant effects as a group and not significant effects as a group, fo rboth types.
+- UI needs improvements
+- Provide cancel/restart buttons at each point

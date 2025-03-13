@@ -8,6 +8,7 @@ import { LLMProvider } from '@/lib/types/llm';
 import { LLMProviderFactory } from '@/lib/constants/llms';
 import { resultAttributes } from '@/lib/constants/resultAttributes';
 import { Header } from '@/components/layout/Header';
+import { getApiKeys } from '@/lib/utils/apiKeyManager';
 
 type ExtendedProvider = LLMProvider | 'jigsaw';
 
@@ -28,12 +29,19 @@ export default function ProgressPage() {
             setIsAnalysisStarted(true);
             
             try {
-                // Get config and API keys from localStorage
+                // Get config from localStorage
                 const configJson = localStorage.getItem('experimentConfig');
-                const apiKeysJson = localStorage.getItem('apiKeys');
                 
-                if (!configJson || !apiKeysJson) {
-                    throw new Error("Missing configuration or API keys. Please go back to the experiment creation page.");
+                if (!configJson) {
+                    throw new Error("Missing configuration. Please go back to the experiment creation page.");
+                }
+                
+                // Get API keys from our centralized manager
+                const apiKeys = getApiKeys();
+                
+                // Check if we have any API keys
+                if (Object.values(apiKeys).every(key => !key)) {
+                    throw new Error("Missing API keys. Please go back to the experiment creation page.");
                 }
                 
                 const parsedConfig = JSON.parse(configJson);
@@ -61,8 +69,6 @@ export default function ProgressPage() {
                     promptFunction: defaultPromptFunction,
                     responseVariables: restoreResponseVariableFunctions(parsedConfig.responseVariables)
                 };
-                
-                const apiKeys: Record<ExtendedProvider, string> = JSON.parse(apiKeysJson);
                 
                 // Initialize LLM providers with API keys
                 try {
@@ -128,7 +134,7 @@ export default function ProgressPage() {
         };
 
         runAnalysis();
-    }, [router, isAnalysisStarted]);
+    }, [router]);
 
     const scrollToTop = () => {
         window.scrollTo({ top: 0, behavior: 'smooth' });
