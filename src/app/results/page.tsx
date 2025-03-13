@@ -115,7 +115,31 @@ export default function ResultsPage() {
     };
 
     useEffect(() => {
-        // Check for selectedResultsId from the homepage
+        // First try to load the most recent analysis results
+        try {
+            const savedResults = localStorage.getItem('analysisResults');
+            
+            if (savedResults) {
+                const parsedResults = JSON.parse(savedResults);
+                
+                // Restore the prompt function and response variable functions
+                const resultsWithFunction: AnalysisData = {
+                    ...parsedResults,
+                    config: {
+                        ...parsedResults.config,
+                        promptFunction: defaultPromptFunction,
+                        responseVariables: restoreResponseVariableFunctions(parsedResults.config.responseVariables)
+                    }
+                };
+                
+                setResults(resultsWithFunction);
+                return; // Exit early if we found recent results
+            }
+        } catch (e) {
+            console.error("Error parsing recent results:", e);
+        }
+        
+        // If no recent results, check for selectedResultsId from the saved results
         const selectedResultsId = localStorage.getItem('selectedResultsId');
         
         if (selectedResultsId) {
@@ -156,31 +180,7 @@ export default function ResultsPage() {
                 setError("Selected results not found. Please run the experiment again.");
             }
         } else {
-            try {
-                // Try to load from localStorage
-                const savedResults = localStorage.getItem('analysisResults');
-                
-                if (savedResults) {
-                    const parsedResults = JSON.parse(savedResults);
-                    
-                    // Restore the prompt function and response variable functions
-                    const resultsWithFunction: AnalysisData = {
-                        ...parsedResults,
-                        config: {
-                            ...parsedResults.config,
-                            promptFunction: defaultPromptFunction,
-                            responseVariables: restoreResponseVariableFunctions(parsedResults.config.responseVariables)
-                        }
-                    };
-                    
-                    setResults(resultsWithFunction);
-                } else {
-                    setError("No results found. Please run the experiment first.");
-                }
-            } catch (e) {
-                console.error("Error parsing results:", e);
-                setError("Error loading results. Please run the experiment again.");
-            }
+            setError("No results found. Please run the experiment first.");
         }
     }, []);
 

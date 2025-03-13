@@ -364,6 +364,10 @@ export const ResultsVisualization: React.FC<ResultsVisualizationProps> = ({ data
                             
                             // Save results
                             saveResults(updatedData, statsData);
+                            
+                            // Clear the temporary analysis results to avoid confusion with saved results
+                            localStorage.removeItem('analysisResults');
+                            
                             setShowSaveModal(false);
                             alert(`Results "${resultName}" have been saved successfully!`);
                         }}
