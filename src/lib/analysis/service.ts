@@ -170,11 +170,12 @@ export class AnalysisService {
                             break;
                         }
                         
-                        // Skip processing if we're in backoff state
+                        // Add a check to skip processing if the model is in a backoff state
                         if (modelProgress.backingOff && modelProgress.backoffEndsAt > Date.now()) {
-                            console.log(`Still in backoff period for model ${model.name}, waiting until ${new Date(modelProgress.backoffEndsAt).toLocaleTimeString()}`);
+                            console.log(`Model ${model.name} is in backoff state, waiting until ${new Date(modelProgress.backoffEndsAt).toLocaleTimeString()}`);
                             const remainingMs = modelProgress.backoffEndsAt - Date.now();
                             await new Promise(resolve => setTimeout(resolve, remainingMs));
+                            continue;
                         }
                         
                         const { promptIdx, promptVariable, combination } = item;

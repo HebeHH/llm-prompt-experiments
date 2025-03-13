@@ -56,7 +56,7 @@ function ConfigCreator() {
         
         try {
             // Save config and API keys to localStorage before navigating
-            saveCurrentConfig(config);
+            localStorage.setItem('experimentConfig', JSON.stringify(config));
             saveApiKeys(apiKeys);
             
             // Navigate to progress page

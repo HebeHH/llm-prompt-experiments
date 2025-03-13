@@ -135,9 +135,6 @@ export default function ProgressPage() {
                 localStorage.setItem('analysisResults', JSON.stringify(resultsForStorage));
                 localStorage.setItem('usingDefaultPromptFunction', 'true');
                 
-                // Clear any previously selected results ID to ensure we load the fresh results
-                localStorage.removeItem('selectedResultsId');
-                
                 // Navigate to results page
                 router.push('/results');
             } catch (error) {
