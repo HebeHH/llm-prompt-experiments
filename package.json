@@ -16,6 +16,8 @@
     "file-saver": "^2.0.5",
     "groq-sdk": "^0.15.0",
     "html-to-image": "^1.11.13",
+    "html2canvas": "^1.4.1",
+    "jspdf": "^3.0.0",
     "jstat": "^1.9.6",
     "jszip": "^3.10.1",
     "lodash": "^4.17.21",

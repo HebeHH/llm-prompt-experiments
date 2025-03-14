@@ -69,12 +69,15 @@ const SectionGenerationStep: React.FC<SectionGenerationStepProps> = ({
           // A more robust approach would be to store the section-graph mapping
           const sectionNameInFileName = currentSection.title
             .toLowerCase()
-            .replace(/[^\w\s]/g, '')
+            .replace(/[^-]+/g, '')
             .replace(/\s+/g, '-');
           
           return fileName.toLowerCase().includes(sectionNameInFileName);
         })
-        .map(([fileName]) => ({ fileName }));
+        .map(([fileName, dataUrl]) => ({ fileName, description: `Image for ${currentSection.title}` }));
+      
+      // Prompt the LLM to include images in the markdown
+      const imagePrompt = sectionGraphs.map(graph => `![${graph.description}](${graph.fileName})`).join('\n');
       
       // Generate content for the current section
       const content = await llmService.generateSectionContent(

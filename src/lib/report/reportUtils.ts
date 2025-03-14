@@ -349,15 +349,29 @@ export const embedImagesInMarkdown = (
   markdown: string,
   images: Record<string, string>
 ): string => {
-  // Create a regex to find image placeholders in the markdown
-  const imagePlaceholderRegex = /\!\[([^\]]+)\]\(IMAGE_PLACEHOLDER:([^)]+)\)/g;
+  // Create a regex to find image references in the markdown
+  // This will match both standard markdown image syntax ![alt text](filename.png)
+  // and the placeholder syntax ![alt text](IMAGE_PLACEHOLDER:imageId)
+  const imageRegex = /!\[([^\]]+)\]\(([^)]+)\)/g;
   
-  // Replace image placeholders with actual image references
-  return markdown.replace(imagePlaceholderRegex, (match, altText, imageId) => {
-    const imageUrl = images[imageId];
-    if (imageUrl) {
-      return `![${altText}](${imageUrl})`;
+  // Replace image references with actual image data URLs
+  return markdown.replace(imageRegex, (match, altText, src) => {
+    // Check if this is a placeholder
+    if (src.startsWith('IMAGE_PLACEHOLDER:')) {
+      const imageId = src.replace('IMAGE_PLACEHOLDER:', '');
+      const imageUrl = images[imageId];
+      if (imageUrl) {
+        return `![${altText}](${imageUrl})`;
+      }
+      return match; // Keep the placeholder if image not found
     }
-    return match; // Keep the placeholder if image not found
+    
+    // Check if this is a direct filename reference
+    if (images[src]) {
+      return `![${altText}](${images[src]})`;
+    }
+    
+    // If the image is not found in our images object, return the original match
+    return match;
   });
 }; 

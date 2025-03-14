@@ -381,8 +381,9 @@ This section should cover: ${section.description}
 If subsections are defined for this section, you should NOT generate content for those subsections - they will be handled separately.
 Focus only on the main content for this section.
 
-If graphs are available for this section, you can include them using the format [!filename.png] where filename.png is the filename of the graph.
-For example, to include a graph with filename "model-comparison.png", you would write [!model-comparison.png] at the appropriate place in your text.
+IMPORTANT: If graphs are available for this section, you MUST include them in your content using standard markdown image syntax: ![Description](filename.png)
+For example, to include a graph with filename "model-comparison.png", you would write ![Model Comparison Graph](model-comparison.png) at the appropriate place in your text.
+Make sure to include ALL available graphs in your content at relevant points in the text.
 
 Your content should be in Markdown format. Use appropriate headings, lists, emphasis, etc.
 Start the section with a level 2 heading (##) for the section title.
@@ -400,7 +401,10 @@ Section Description:
 ${section.description}
 
 Available Graphs:
-${JSON.stringify(availableGraphs, null, 2)}
+${availableGraphs.map(graph => `- ${graph.fileName}: ${graph.description || 'Graph for this section'}`).join('\n')}
+
+IMPORTANT: Please include ALL of the available graphs in your content using standard markdown image syntax: ![Description](filename.png)
+For example: ![Graph showing model comparison](model-comparison.png)
 
 Generate the content in Markdown format, starting with a level 2 heading for the section title.
     `.trim();
