@@ -161,6 +161,9 @@ We'll need to keep these images handy to use in the report generation step.
 - add total price to the pricing predictor component
 - model tab of /create should always sort the unavailable models/providers to the bottom
 - Clicking "New Experiment" is loading the experiment with the last saved configuration; it should load with default/no configuration instead.
+- in the show configuration on results tab, the prompt noise/covariates should be numbered
+- duplicate interaction combinations?
+
 
 
 ## Recent improvement ideas
